@@ -16,6 +16,8 @@ app.get("/", function (request, response) {
   );
 });
 
+let data ;
+
 app.get("/webhook", function (req, res) {
   if (
     req.query["hub.mode"] == "subscribe" &&
@@ -30,9 +32,9 @@ app.get("/webhook", function (req, res) {
 app.post("/webhook", function (request, response) {
   console.log(request.body);
   console.log("Incoming webhook: " + JSON.stringify(request.body));
-  response.status(200).json({data:request.body});
+  data = JSON.stringify(request.body)
+  response.status(200).json({data});
 });
-
 var listener = app.listen(PORT, function () {
   console.log("Your app is listening on port " + PORT);
 });
