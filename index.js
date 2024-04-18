@@ -24,10 +24,11 @@ app.get("/webhook", function (req, res) {
     req.query["hub.verify_token"] == "token"
   ) {
     res.send(req.query["hub.challenge"]);
+    response.status(200).json({data});
+
   } else {
     res.sendStatus(400);
   }
-  response.status(200).json({data});
 
 });
 
