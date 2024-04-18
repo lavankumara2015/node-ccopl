@@ -3,8 +3,7 @@ var express = require("express");
 var bodyParser = require("body-parser");
 require('dotenv').config()
 
-const PORT = process.env.PORT || 3017;
-
+const PORT = process.env.PORT || 3007;
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -16,15 +15,13 @@ app.get("/", function (request, response) {
   );
 });
 
-let data ;
 
 app.get("/webhook", function (req, res) {
   if (
     req.query["hub.mode"] == "subscribe" &&
     req.query["hub.verify_token"] == "token"
   ) {
-    // res.send(req.query["hub.challenge"]);
-    res.status(200).json({data});
+    res.send(req.query["hub.challenge"]);
 
   } else {
     res.sendStatus(400);
@@ -35,7 +32,6 @@ app.get("/webhook", function (req, res) {
 app.post("/webhook", function (request, response) {
   console.log(request.body);
   console.log("Incoming webhook: " + JSON.stringify(request.body));
-  data = JSON.stringify(request.body)
 });
 var listener = app.listen(PORT, function () {
   console.log("Your app is listening on port " + PORT);
