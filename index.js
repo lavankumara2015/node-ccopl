@@ -1,6 +1,9 @@
 
-var express = require("express"),
-  bodyParser = require("body-parser");
+var express = require("express");
+var bodyParser = require("body-parser");
+require('dotenv').config()
+
+const PORT = process.env.PORT || 3017;
 
 var app = express();
 
@@ -25,11 +28,12 @@ app.get("/webhook", function (req, res) {
 });
 
 app.post("/webhook", function (request, response) {
-  // console.log(request.body);
+  console.log(request.body);
   console.log("Incoming webhook: " + JSON.stringify(request.body));
-  response.sendStatus(200);
+  response.status(200).json({data:request.body});
 });
 
-var listener = app.listen(process.env.PORT, function () {
-  console.log("Your app is listening on port " + listener.address().port);
+var listener = app.listen(PORT, function () {
+  console.log("Your app is listening on port " + PORT);
 });
+
