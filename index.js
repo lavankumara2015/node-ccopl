@@ -41,6 +41,7 @@ app.post("/webhook", async function (request, response) {
     const { entry } = request.body;
     const { changes } = entry[0];
     const { value } = changes[0];
+    console.log(value)
     const collection = await db.collection("our_messages");
     if (value.messages[0].type === "reaction") {
       const messageId = value.messages[0].id;
