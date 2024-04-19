@@ -36,12 +36,16 @@ app.get("/webhook", function (req, res) {
   res.sendStatus(200);
 });
 
-app.post("/webhook", function (request, response) {
-  console.log(request.body);
-  const { entry } = request.body;
-  const { changes } = entry[0];
-  const { value } = changes[0];
-  console.log(changes);
-  console.log(value);
-  console.log(JSON.stringify(value));
+app.post("/webhook", async function (request, response) {
+  try {
+    console.log(request.body);
+    const { entry } = request.body;
+    const { changes } = entry[0];
+    const { value } = changes[0];
+    const collection = await db.collection("our_messages");
+    await collection.insertOne(value);
+    response.status(201).json({ msg: "Created Successfully" });
+  } catch (error) {
+    response.status(400).json({ msg: "Something Went Wrong" });
+  }
 });
