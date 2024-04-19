@@ -28,7 +28,7 @@ app.post("/webhook", function (request, response) {
   console.log(request.body);
   const { entry } = request.body;
   const { changes } = entry[0];
-  const { value } = changes;
+  const { value } = changes[0];
   console.log(changes);
   console.log(value);
   console.log(JSON.stringify(value))
