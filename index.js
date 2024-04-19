@@ -41,10 +41,13 @@ app.post("/webhook", async function (request, response) {
     const { entry } = request.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    if (value.messages[0].type === "reaction") {
-      return console.log(value);
-    }
     const collection = await db.collection("our_messages");
+    if (value.messages[0].type === "reaction") {
+      const messageId = value.messages[0].id;
+      await collection.findAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+      res.status(202).json({msg: "Updated successfully", status: 202});
+    }
+
     await collection.insertOne({ ...value, status: "delivered", coachId: "1" });
     response.status(201).json({ msg: "Created Successfully" });
   } catch (error) {
@@ -105,5 +108,24 @@ app.post("/message", async function (request, response) {
     }
   } catch (error) {
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
+  }
+});
+
+app.post("/coach", async (req, res) => {
+  console.log("Process started");
+  try {
+    const collection = await db.collection("coachs");
+    const { name, mobile, password } = req.body;
+    if (!name || !mobile || !password)
+      return res.status(201).json({ msg: "Data cannot be empty", status: 400 });
+    const coach = {
+      username: name,
+      mobileNum: mobile,
+      password: password,
+    };
+    await collection.insertOne(coach);
+    res.status(201).json({ msg: "Coaches Created", status: 201, password });
+  } catch (error) {
+    res.status(201).json({ msg: "Something Went Wrong", status: 400 });
   }
 });
