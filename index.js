@@ -32,6 +32,7 @@ app.post("/webhook", function (request, response) {
   console.log(changes);
   console.log(value);
   console.log(JSON.stringify(value))
+  // console.log(JSON.stringify(request.body))
 });
 var listener = app.listen(PORT, function () {
   console.log("Your app is listening on port " + PORT);
