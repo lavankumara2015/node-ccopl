@@ -31,9 +31,9 @@ app.get("/", function (request, response) {
   );
 });
 
-app.get("/webhook", function (req, res) {
-  res.sendStatus(200);
-});
+// app.get("/webhook", function (req, res) {
+//   res.sendStatus(200);
+// });
 
 app.post("/webhook", async function (request, response) {
   try {
@@ -73,7 +73,7 @@ function getMessageObject(data, type = "text") {
       type: "reaction",
       reaction: {
         message_id:
-          "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggNTNDQzU3MjNFRjAyMUI0NjM5MzNERDQ2NDMxRDFFMDQA",
+          "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggQUU0MjZDMUJCMUEyODQ1NTI3NjZDM0M0NEU1RjY2RDgA",
         emoji: data.emoji,
       },
     };
