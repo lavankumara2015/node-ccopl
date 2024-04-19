@@ -41,6 +41,7 @@ app.post("/webhook", async function (request, response) {
     const { entry } = request.body;
     const { changes } = entry[0];
     const { value } = changes[0];
+    console.log(value)
     const collection = await db.collection("our_messages");
     if (value.messages[0].type === "reaction") {
       const messageId = value.messages[0].id;
@@ -66,6 +67,12 @@ app.post("/webhook", async function (request, response) {
   }
 });
 
+
+
+
+
+
+
 function getMessageObject(data, type = "text") {
   if (type === "text") {
     let messages = {
@@ -87,7 +94,7 @@ function getMessageObject(data, type = "text") {
       type: "reaction",
       reaction: {
         message_id:
-          "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggNTNDQzU3MjNFRjAyMUI0NjM5MzNERDQ2NDMxRDFFMDQA",
+          "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggQUU0MjZDMUJCMUEyODQ1NTI3NjZDM0M0NEU1RjY2RDgA",
         emoji: data.emoji,
       },
     };
