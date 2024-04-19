@@ -14,14 +14,15 @@ app.get("/", function (request, response) {
   );
 });
 app.get("/webhook", function (req, res) {
-  if (
-    req.query["hub.mode"] == "subscribe" &&
-    req.query["hub.verify_token"] == "token"
-  ) {
-    res.send(req.query["hub.challenge"]);
-  } else {
-    res.sendStatus(400);
-  }
+  // if (req.query["hub.mode"] == "subscribe" &&
+  //   req.query["hub.verify_token"] == "token"
+  // ) {
+  //   res.send(req.query["hub.challenge"]);
+  // } else {
+  //   res.sendStatus(200);
+  // }
+
+  res.sendStatus(200)
 });
 
 app.post("/webhook", function (request, response) {
