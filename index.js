@@ -18,17 +18,20 @@ app.get("/webhook", function (req, res) {
     req.query["hub.mode"] == "subscribe" &&
     req.query["hub.verify_token"] == "token"
   ) {
-    console.log("Incoming webhook: " + JSON.stringify(req.body));
     res.send(req.query["hub.challenge"]);
   } else {
     res.sendStatus(400);
   }
 });
+
 app.post("/webhook", function (request, response) {
   console.log(request.body);
   const { entry } = request.body;
-  const { changes } = entry;
+  const { changes } = entry[0];
+  const { value } = changes;
   console.log(changes);
+  console.log(value);
+  console.log(JSON.stringify(value))
 });
 var listener = app.listen(PORT, function () {
   console.log("Your app is listening on port " + PORT);
