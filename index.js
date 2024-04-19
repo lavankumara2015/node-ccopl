@@ -44,14 +44,25 @@ app.post("/webhook", async function (request, response) {
     const collection = await db.collection("our_messages");
     if (value.messages[0].type === "reaction") {
       const messageId = value.messages[0].id;
-      await collection.findAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
-      res.status(202).json({msg: "Updated successfully", status: 202});
+      await collection.findOneAndUpdate(
+        { "messages.id": value.messages[0].id },
+        {
+          $set: {
+            reaction: [
+              { emoji: value.messages[0].reaction.emoji, userNumber: value.metadata.display_phone_number },
+            ],
+          },
+        }
+      );
+      return response.status(202).json({ msg: "Updated successfully", status: 202 });
     }
 
     await collection.insertOne({ ...value, status: "delivered", coachId: "1" });
     response.status(201).json({ msg: "Created Successfully" });
   } catch (error) {
-    response.status(400).json({ msg: "Something Went Wrong" });
+    response
+      .status(400)
+      .json({ msg: "Something Went Wrong", error: error.message });
   }
 });
 
@@ -129,3 +140,5 @@ app.post("/coach", async (req, res) => {
     res.status(201).json({ msg: "Something Went Wrong", status: 400 });
   }
 });
+
+// await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);

@@ -24,8 +24,7 @@ app.listen(PORT, () => {
   console.log(`Proxy server listening on port ${PORT}`);
 });
 
-
-object.entry?.changes
+object.entry?.changes;
 
 let a = {
   object: "whatsapp_business_account",
@@ -46,10 +45,54 @@ let a = {
             messages: [
               {
                 from: "918096255759",
-                id: "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggMTBBNDk0MDhGRTU2NDFGRDc3RENENDQ0Njk0MUVGRDcA",
+                id: "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggMTZDMzNCNTVFRDA4NDA5Njg4Q0JDMEY2REI3RTIzREYA",
                 timestamp: "1713500803",
-                text: { body: "Lavankumar" },
-                type: "text",
+                type: "reaction",
+                reaction: {
+                  emoji: "💖",
+                  messsage_id: "<WAMID>",
+                },
+              },
+            ],
+          },
+          field: "messages",
+        },
+      ],
+    },
+  ],
+};
+
+let b = {
+  object: "whatsapp_business_account",
+  entry: [
+    {
+      id: "8856996819413533",
+      changes: [
+        {
+          value: {
+            messaging_product: "whatsapp",
+            metadata: {
+              display_phone_number: "<PHONE_NUMBER>",
+              phone_number_id: "27681414235104944",
+            },
+            contacts: [
+              {
+                profile: {
+                  name: "<CONTACT_NAME>",
+                },
+                wa_id: "<WA_ID>",
+              },
+            ],
+            messages: [
+              {
+                from: "sender_wa_id",
+                id: "message_id",
+                timestamp: "message_timestamp",
+                type: "reaction",
+                reaction: {
+                  emoji: "<emoji>",
+                  messsage_id: "<WAMID>",
+                },
               },
             ],
           },
