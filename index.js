@@ -22,7 +22,6 @@ let initializeDBAndServer = async (req, res) => {
 };
 
 initializeDBAndServer();
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
