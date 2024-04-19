@@ -41,7 +41,7 @@ app.post("/webhook", async function (request, response) {
     const { entry } = request.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    console.log(value)
+    console.log(value);
     const collection = await db.collection("our_messages");
     if (value.messages[0].type === "reaction") {
       const messageId = value.messages[0].id;
@@ -50,12 +50,17 @@ app.post("/webhook", async function (request, response) {
         {
           $set: {
             reaction: [
-              { emoji: value.messages[0].reaction.emoji, userNumber: value.metadata.display_phone_number },
+              {
+                emoji: value.messages[0].reaction.emoji,
+                userNumber: value.metadata.display_phone_number,
+              },
             ],
           },
         }
       );
-      return response.status(202).json({ msg: "Updated successfully", status: 202 });
+      return response
+        .status(202)
+        .json({ msg: "Updated successfully", status: 202 });
     }
 
     await collection.insertOne({ ...value, status: "delivered", coachId: "1" });
@@ -66,12 +71,6 @@ app.post("/webhook", async function (request, response) {
       .json({ msg: "Something Went Wrong", error: error.message });
   }
 });
-
-
-
-
-
-
 
 function getMessageObject(data, type = "text") {
   if (type === "text") {
