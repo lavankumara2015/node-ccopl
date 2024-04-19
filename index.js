@@ -46,7 +46,7 @@ app.post("/webhook", async function (request, response) {
     if (value.messages[0].type === "reaction") {
       const messageId = value.messages[0].id;
       await collection.findOneAndUpdate(
-        { "messages.id": value.messages[0].id },
+        { "messages.id": value.messages[0].reaction.message_id },
         {
           $set: {
             reaction: [
