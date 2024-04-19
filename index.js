@@ -41,8 +41,11 @@ app.post("/webhook", async function (request, response) {
     const { entry } = request.body;
     const { changes } = entry[0];
     const { value } = changes[0];
+    if (value.messages[0].type === "reaction") {
+      return console.log(value);
+    }
     const collection = await db.collection("our_messages");
-    await collection.insertOne(value);
+    await collection.insertOne({ ...value, status: "delivered", coachId: "1" });
     response.status(201).json({ msg: "Created Successfully" });
   } catch (error) {
     response.status(400).json({ msg: "Something Went Wrong" });
