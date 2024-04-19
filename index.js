@@ -31,9 +31,9 @@ app.get("/", function (request, response) {
   );
 });
 
-// app.get("/webhook", function (req, res) {
-//   res.sendStatus(200);
-// });
+app.get("/webhook", function (req, res) {
+  res.sendStatus(200);
+});
 
 app.post("/webhook", async function (request, response) {
   try {
@@ -54,6 +54,12 @@ app.post("/webhook", async function (request, response) {
     response.status(400).json({ msg: "Something Went Wrong" });
   }
 });
+
+
+
+
+
+
 
 function getMessageObject(data, type = "text") {
   if (type === "text") {
