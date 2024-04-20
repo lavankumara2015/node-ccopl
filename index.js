@@ -49,7 +49,7 @@ app.post("/webhook", async function (req, res) {
     });
     console.log(value.messages[0].type);
     if (value.messages[0].type === "reaction") {
-      console.log(value.messages[0].reaction)
+      console.log(value.messages[0].reaction);
       await collection.findOneAndUpdate(
         {
           from: senderMobileNumber,
@@ -57,9 +57,7 @@ app.post("/webhook", async function (req, res) {
         },
         {
           $push: {
-            "messages.$.reaction": [
-              { emoji: value.messages[0].reaction.emoji },
-            ],
+            "messages.$.reaction": { emoji: value.messages[0].reaction.emoji },
           },
         }
       );
