@@ -35,40 +35,62 @@ app.get("/webhook", function (req, res) {
   res.sendStatus(200);
 });
 
-app.post("/webhook", async function (request, response) {
+app.post("/webhook", async function (req, res) {
   try {
-    console.log(request.body);
-    const { entry } = request.body;
+    const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    console.log(value);
-    const collection = await db.collection("our_messages");
-    if (value.messages[0].type === "reaction") {
-      const messageId = value.messages[0].id;
-      await collection.findOneAndUpdate(
-        { "messages.id": value.messages[0].reaction.message_id },
-        {
-          $set: {
-            reaction: [
-              {
-                emoji: value.messages[0].reaction.emoji,
-                userNumber: value.metadata.display_phone_number,
-              },
-            ],
-          },
-        }
-      );
-      return response
-        .status(202)
-        .json({ msg: "Updated successfully", status: 202 });
-    }
+    const senderMobileNumber = value.messages[0].from;
+    const patientName = value?.contacts[0]?.profile?.name || "";
 
-    await collection.insertOne({ ...value, status: "delivered", coachId: "1" });
-    response.status(201).json({ msg: "Created Successfully" });
+    const collection = await db.collection("patients");
+    const isSenderExists = await collection.findOne({
+      from: senderMobileNumber,
+    });
+
+    if (isSenderExists) {
+      console.log("option 1", value?.messages[0]?.type);
+      if (value?.messages[0]?.type === "reaction") {
+        let messageInsideId = isSenderExists.messages.find((each) => {
+          return each.id === value.messages[0].id;
+        });
+
+        console.log(messageInsideId);
+        await collection.updateOne(
+          {
+            from: senderMobileNumber,
+            messages: { $elemMatch: { id: messageInsideId.id } },
+          },
+          {
+            $set: { "messages.$.reaction": [{value.messages[0].reaction.emoji}] },
+          }
+        );
+        console.log("Reaction updated");
+        res.status(201).json({ msg: "Reaction updated successfully." });
+      }
+      await collection.updateOne(
+        { from: senderMobileNumber },
+        { $push: { messages: value.messages[0] } }
+      );
+      console.log("Document updated successfully.");
+      res.status(201).json({ msg: "Document updated successfully." });
+    } else {
+      console.log("option 2");
+      await collection.insertOne({
+        name: patientName,
+        from: senderMobileNumber,
+        coachId: "",
+        coachName: "",
+        messages: [value.messages[0]],
+        imageUrl: "",
+        area: "",
+        stage: "",
+      });
+      console.log("New document inserted successfully.");
+      res.status(201).json({ msg: "Created Successfully" });
+    }
   } catch (error) {
-    response
-      .status(400)
-      .json({ msg: "Something Went Wrong", error: error.message });
+    res.status(400).json({ msg: "Something Went Wrong", error: error.message });
   }
 });
 
@@ -144,6 +166,14 @@ app.post("/coach", async (req, res) => {
     res.status(201).json({ msg: "Coaches Created", status: 201, password });
   } catch (error) {
     res.status(201).json({ msg: "Something Went Wrong", status: 400 });
+  }
+});
+
+app.post("/patient", async (req, res) => {
+  try {
+    const { name } = req.body;
+  } catch (error) {
+    res.status(201).json({ msg: "Something Went Wrong Message", status: 400 });
   }
 });
 

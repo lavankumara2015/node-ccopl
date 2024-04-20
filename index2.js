@@ -102,3 +102,41 @@ let b = {
     },
   ],
 };
+
+try {
+  console.log(request.body);
+  const { entry } = request.body;
+  const { changes } = entry[0];
+  const { value } = changes[0];
+  if (value.statuses) {
+    let {} = value?.statuses[0];
+  }
+  console.log(value);
+  const collection = await db.collection("our_messages");
+  if (value.messages[0]?.type === "reaction") {
+    const messageId = value.messages[0].reaction.message_id;
+    await collection.findOneAndUpdate(
+      { "messages.id": messageId },
+      {
+        $set: {
+          reaction: [
+            {
+              emoji: value.messages[0].reaction.emoji,
+              userNumber: value.metadata.display_phone_number,
+            },
+          ],
+        },
+      }
+    );
+    return response
+      .status(202)
+      .json({ msg: "Updated successfully", status: 202 });
+  }
+
+  await collection.insertOne({ ...value, status: "" });
+  response.status(201).json({ msg: "Created Successfully" });
+} catch (error) {
+  response
+    .status(400)
+    .json({ msg: "Something Went Wrong", error: error.message });
+}
