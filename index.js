@@ -47,32 +47,25 @@ app.post("/webhook", async function (req, res) {
     const isSenderExists = await collection.findOne({
       from: senderMobileNumber,
     });
+    console.log(value.messages[0].type);
+    if (value.messages[0].type === "reaction") {
 
-    if (isSenderExists) {
-      console.log("option 1", value?.messages[0]?.type);
-      if (value?.messages[0]?.type === "reaction") {
-        let messageInsideId = isSenderExists.messages.map((each) => {
-          if (each.id === value.messages[0].id ){
-            return {
-              ...each ,
-              reaction
-            }
-          }
-        });
-
-        console.log(messageInsideId);
-        await collection.updateOne(
-          {
-            from: senderMobileNumber,
-            messages: { $elemMatch: { id: messageInsideId.id } },
+      console.log(value.messages[0].reaction)
+      await collection.findOneAndUpdate(
+        {
+          from: senderMobileNumber,
+          "messages.id": value.messages[0].reaction.message_id,
+        },
+        {
+          $push: {
+            "messages.$.reaction": [
+              { emoji: value.messages[0].reaction.emoji },
+            ],
           },
-          {
-            $set: { "messages.$.reaction": [value.messages[0].reaction.emoji] },
-          }
-        );
-        console.log("Reaction updated");
-        res.status(201).json({ msg: "Reaction updated successfully." });
-      }
+        }
+      );
+      res.send({ msg: "Reaction sent" });
+    } else if (isSenderExists) {
       await collection.updateOne(
         { from: senderMobileNumber },
         { $push: { messages: value.messages[0] } }
