@@ -63,7 +63,7 @@ app.post("/webhook", async (req, res) => {
 
         await collection.updateOne(
           { from: senderMobileNumber, "messages.id": messageId },
-          { $push: { "messages.$.reaction": reactionEmoji } } // Append reaction to existing array
+          { $push: { "messages.$.reaction": reactionEmoji } } 
         );
 
         console.log("Reaction updated");
