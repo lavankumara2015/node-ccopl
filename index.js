@@ -1,8 +1,10 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
+const cors = require('cors') ;
 const app = express();
 app.use(express.json());
+app.use(cors())
 require("dotenv").config();
 const PORT = process.env.PORT || 3007;
 
@@ -31,9 +33,13 @@ app.get("/", function (request, response) {
   );
 });
 
-app.get("/webhook", function (req, res) {
-  res.sendStatus(200);
-});
+
+
+// app.get("/webhook", function (req, res) {
+//   res.sendStatus(200);
+// });
+
+
 
 app.post("/webhook", async function (req, res) {
   try {
@@ -122,6 +128,8 @@ function getMessageObject(data, type = "text") {
   }
 }
 
+
+
 app.post("/message", async function (request, response) {
   try {
     const { type, data } = await request.body;
@@ -150,6 +158,9 @@ app.post("/message", async function (request, response) {
   }
 });
 
+
+
+
 app.post("/coach", async (req, res) => {
   console.log("Process started");
   try {
@@ -169,6 +180,7 @@ app.post("/coach", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.post("/patient", async (req, res) => {
   try {
     const { name } = req.body;
@@ -178,3 +190,22 @@ app.post("/patient", async (req, res) => {
 });
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+=======
+app.get("/users", async (req, res) => {
+  try {
+    const collection = await db.collection("patients") ;
+    let data = await collection.find({},{messages:0}) ; 
+    data = await data.toArray()
+    console.log(data);
+    res.send({data: data})
+  } catch (error) {
+    res.status(201).json({ msg: "Something Went Wrong", status: 400 }); 
+    console.log(error.message);
+  }
+})
+
+
+
+
+// await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+>>>>>>> 4cff14b1d62ac302824bdd1d8e64bfb32f197a0b
