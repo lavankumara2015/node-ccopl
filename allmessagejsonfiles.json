@@ -1,0 +1,379 @@
+
+//  Received Text Message
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "27681414235104944"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "Kerry Fisher"
+                                },
+                                "wa_id": "16315551234"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "16315551234",
+                                "id": "wamid.ABGGFlCGg0cvAgo-sJQh43L5Pe4W",
+                                "timestamp": "1603059201",
+                                "text": {
+                                    "body": "Hello this is an answer"
+                                },
+                                "type": "text"
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+
+// Received Message with Reaction
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "<PHONE_NUMBER>",
+                            "phone_number_id": "27681414235104944"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "<CONTACT_NAME>"
+                                },
+                                "wa_id": "<WA_ID>"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "sender_wa_id",
+                                "id": "message_id",
+                                "timestamp": "message_timestamp",
+                                "type": "reaction",
+                                "reaction": {
+                                    "emoji": "<emoji>",
+                                    "messsage_id": "<WAMID>"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+
+// Received Media Message with Image
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "<PHONE_NUMBER_ID>"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "<CONTACT_NAME>"
+                                },
+                                "wa_id": "<WA_ID>"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "<FROM_PHONE_NUMBER>",
+                                "id": "wamid.id",
+                                "timestamp": "<TIMESTAMP>",
+                                "type": "image",
+                                "image": {
+                                    "caption": "This is a caption",
+                                    "mime_type": "image/jpeg",
+                                    "sha256": "81d3bd8a8db4868c9520ed47186e8b7c5789e61ff79f7f834be6950b808a90d3",
+                                    "id": "2754859441498128"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+
+// Received Media Message with Sticker
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "<DISPLAY_PHONE_NUMBER>",
+                            "phone_number_id": "<PHONE_NUMBER_ID>"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "<CONTACT_NAME>"
+                                },
+                                "wa_id": "<WA_ID>"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "<SENDER_PHONE_NUMBER>",
+                                "id": "<WHATSAPP_BUSINESS_ACCOUNT_ID>",
+                                "timestamp": "<TIMESTAMP>",
+                                "type": "sticker",
+                                "sticker": {
+                                    "id": "<ID>",
+                                    "animated": false,
+                                    "mime_type": "image/webp",
+                                    "sha256": "<HASH>"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+// Received Static Location Messages
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "<WHATSAPP_BUSINESS_ACCOUNT_ID>",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "<PHONE_NUMBER>",
+                            "phone_number_id": "<PHONE_NUMBER_ID>"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "<NAME>"
+                                },
+                                "wa_id": "<WHATSAPP_ID>"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "PHONE_NUMBER",
+                                "id": "wamid.ID",
+                                "timestamp": "TIMESTAMP",
+                                "location": {
+                                    "latitude": "<LOCATION_LATITUDE>",
+                                    "longitude": "<LOCATION_LONGITUDE>",
+                                    "name": "<LOCATION_NAME>",
+                                    "address": "<LOCATION_ADDRESS>",
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+
+// Received Unknown Messages
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "1900820329959633",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16315551234",
+                            "phone_number_id": "16315551234"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "Kerry Fisher"
+                                },
+                                "wa_id": "16315555555"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "16315555555",
+                                "id": "wamid.ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                                "timestamp": "1602139392",
+                                "errors": [
+                                    {
+                                        "code": 130501,
+                                        "details": "Message type is not currently supported",
+                                        "title": "Unsupported message type"
+                                    }
+                                ],
+                                "type": "unknown"
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+// Message Status Update Notifications
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "27681414235104944"
+                        },
+                        "statuses": [
+                            {
+                                "id": "wamid.gBGGFlCGg0cvAglAxydbAoy-gwNo",
+                                "status": "sent",
+                                "timestamp": "1603086313",
+                                "recipient_id": "16315551234"
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+// Received Callback from a Quick Reply Button Click
+
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "27681414235104944"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "Kerry Fisher"
+                                },
+                                "wa_id": "16315551234"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "context": {
+                                    "from": "16505553333",
+                                    "id": "wamid.gBGGFlCGg0cvAgkLFm4e9tICiTI"
+                                },
+                                "from": "16315551234",
+                                "id": "wamid.ABGGFlCGg0cvAgo-sHWxBA2VFD_S",
+                                "timestamp": "1603087229",
+                                "type": "button",
+                                "button": {
+                                    "text": "No",
+                                    "payload": "No-Button-Payload"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+// Message Status Update Notifications
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "27681414235104944"
+                        },
+                        "statuses": [
+                            {
+                                "id": "wamid.gBGGFlCGg0cvAglAxydbAoy-gwNo",
+                                "status": "sent",
+                                "timestamp": "1603086313",
+                                "recipient_id": "16315551234"
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
