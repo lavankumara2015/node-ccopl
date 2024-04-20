@@ -35,7 +35,7 @@ app.get("/webhook", function (req, res) {
   res.sendStatus(200);
 });
 
-app.post("/webhook", async function (req, res) {
+app.post("/webhook", async (req, res) => {
   try {
     const { entry } = req.body;
     const { changes } = entry[0];
@@ -43,6 +43,7 @@ app.post("/webhook", async function (req, res) {
     const senderMobileNumber = value.messages[0].from;
     const patientName = value?.contacts[0]?.profile?.name || "";
 
+<<<<<<< HEAD
     const collection = await db.collection("patients");
     const isSenderExists = await collection.findOne({
       from: senderMobileNumber,
@@ -72,8 +73,40 @@ app.post("/webhook", async function (req, res) {
       );
       console.log("Document updated successfully.");
       res.status(201).json({ msg: "Document updated successfully." });
+=======
+    const db = client.db("test");
+    const collection = db.collection("patients");
+    const isSenderExists = await collection.findOne({ from: senderMobileNumber });
+
+    if (isSenderExists) {
+      console.log("Sender exists");
+
+      if (value?.messages[0]?.type === "reaction") {
+        console.log("Reaction message received");
+        const messageId = value.messages[0].id;
+        const reactionEmoji = value.messages[0].reaction.emoji;
+
+        await collection.updateOne(
+          { from: senderMobileNumber, "messages.id": messageId },
+          { $push: { "messages.$.reaction": reactionEmoji } } 
+        );
+
+        console.log("Reaction updated");
+      } else {
+        console.log("Regular message received");
+        await collection.updateOne(
+          { from: senderMobileNumber },
+          { $push: { messages: value.messages[0] } }
+        );
+
+        console.log("Document updated successfully.");
+      }
+
+      res.status(200).json({ msg: "Document updated successfully." });
+>>>>>>> 4e472516b73e692b894923372ffdacf2c1fbb2e4
     } else {
-      console.log("option 2");
+      console.log("New sender");
+
       await collection.insertOne({
         name: patientName,
         from: senderMobileNumber,
@@ -82,15 +115,21 @@ app.post("/webhook", async function (req, res) {
         messages: [value.messages[0]],
         imageUrl: "",
         area: "",
-        stage: "",
+        stage: ""
       });
+
       console.log("New document inserted successfully.");
-      res.status(201).json({ msg: "Created Successfully" });
+      res.status(201).json({ msg: "New document inserted successfully." });
     }
   } catch (error) {
-    res.status(400).json({ msg: "Something Went Wrong", error: error.message });
+    console.error("Error processing webhook:", error);
+    res.status(500).json({ msg: "Internal server error" });
   }
 });
+
+
+
+
 
 function getMessageObject(data, type = "text") {
   if (type === "text") {
@@ -176,3 +215,25 @@ app.post("/patient", async (req, res) => {
 });
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+<<<<<<< HEAD
+=======
+
+
+app.get("/users", async (req, res) => {
+  try {
+    const collection = await db.collection("patients") ;
+    let data = await collection.find({},{messages:0}) ; 
+    data = await data.toArray()
+    console.log(data);
+    res.send({data: data})
+  } catch (error) {
+    res.status(201).json({ msg: "Something Went Wrong", status: 400 }); 
+    console.log(error.message);
+  }
+})
+
+
+
+
+// await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+>>>>>>> 4e472516b73e692b894923372ffdacf2c1fbb2e4
