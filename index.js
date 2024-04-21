@@ -48,12 +48,40 @@ app.post("/webhook", async function (req, res) {
     });
     console.log(value.messages[0].type);
     if (value.messages[0].type === "reaction") {
-      let a = await collection.findOne({
-        from: senderMobileNumber,
-        "messages.id": value.messages[0].reaction.message_id,
-        "messages.reaction.user": value.messages[0].from,
-      });
-      console.log(a)
+      let a = await collection.findOneAndUpdate(
+        {
+          from: senderMobileNumber,
+          "messages.id": value.messages[0].reaction.message_id,
+          "messages.reaction.user": value.messages[0].from,
+        },
+        {
+          $set: {
+            "messages.$[elem].reaction": {
+              $ifNull: ["$messages.$[elem].reaction", []],
+            },
+            "messages.$[elem2].reaction.$[elem3].emoji":
+              value.messages[0].reaction.emoji,
+          },
+        },
+        {
+          arrayFilters: [
+            {
+              "elem.user": value.messages[0].from,
+              "elem.id": value.messages[0].reaction.message_id,
+            },
+            {
+              "elem2.user": value.messages[0].from,
+            },
+            {
+              "elem3.user": value.messages[0].from,
+              "elem3.id": value.messages[0].reaction.message_id,
+            },
+          ],
+          returnOriginal: false, // Optionally, to return the updated document
+          upsert: true, // Create the `messages.reaction` array if it doesn't exist
+        }
+      );
+      console.log(a);
       if (a) return console.log("returned");
       let isReactionExists = await collection.findOneAndUpdate(
         {
