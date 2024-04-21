@@ -6,14 +6,13 @@ app.use(express.json());
 require("dotenv").config();
 const PORT = process.env.PORT || 3007;
 
-let client = new MongoClient(
-  "mongodb+srv://sanjukanki56429:dmX96TLZGz7OYS9A@cluster0.eg2lxgb.mongodb.net/"
-);
-
 let db;
 
 let initializeDBAndServer = async (req, res) => {
   try {
+    client = new MongoClient(
+      "mongodb+srv://sanjukanki56429:dmX96TLZGz7OYS9A@cluster0.eg2lxgb.mongodb.net/"
+    );
     db = await client.db("test");
     app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
   } catch (error) {
@@ -25,7 +24,7 @@ initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.get("/", function (request, response) {
+app.get("/", async function (request, response) {
   response.send(
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
@@ -49,7 +48,29 @@ app.post("/webhook", async function (req, res) {
     });
     console.log(value.messages[0].type);
     if (value.messages[0].type === "reaction") {
-      console.log(value.messages[0].reaction);
+      let a = await collection.findOne({
+        from: senderMobileNumber,
+        "messages.id": value.messages[0].reaction.message_id,
+        "messages.reaction.user": value.messages[0].from,
+      });
+      console.log(a)
+      if (a) return console.log("returned");
+      let isReactionExists = await collection.findOneAndUpdate(
+        {
+          from: senderMobileNumber,
+          "messages.id": value.messages[0].reaction.message_id,
+          "messages.reaction.user": value.messages[0].from,
+        },
+        {
+          $push: {
+            "messages.$.reaction": {
+              emoji: value.messages[0].reaction.emoji,
+              user: value.messages[0].from,
+            },
+          },
+        }
+      );
+      if (isReactionExists) return res.send({ msg: "Reaction Updated" });
       await collection.findOneAndUpdate(
         {
           from: senderMobileNumber,
@@ -57,7 +78,10 @@ app.post("/webhook", async function (req, res) {
         },
         {
           $push: {
-            "messages.$.reaction": { emoji: value.messages[0].reaction.emoji },
+            "messages.$.reaction": {
+              emoji: value.messages[0].reaction.emoji,
+              user: value.messages[0].from,
+            },
           },
         }
       );
