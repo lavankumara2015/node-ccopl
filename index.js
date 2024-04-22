@@ -48,81 +48,35 @@ app.post("/webhook", async function (req, res) {
     });
     console.log(value.messages[0].type);
     if (value.messages[0].type === "reaction") {
-      let a = await findOne({
-        from: senderMobileNumber,
-        "messages.id": value.messages[0].reaction.message_id,
-        "messages.reaction.user": value.messages[0].from,
-      });
       await collection.findOneAndUpdate(
         {
-          from: senderMobileNumber,
-          "messages.id": value.messages[0].reaction.message_id,
-          "messages.reaction.user": value.messages[0].from,
+          from: "918096255759", // Assuming this is the senderMobileNumber
+          "messages.id": "wamid.text1234", // Assuming this is the message ID you want to update
+          "messages.reaction.user": "sample1", // Assuming this is the user whose reaction you want to update
         },
         {
           $set: {
-            "messages.$[elem].reaction": {
-              $ifNull: ["$messages.$[elem].reaction", []],
-            },
-            "messages.$[elem2].reaction.$[elem3].emoji":
-              value.messages[0].reaction.emoji,
+            "messages.$[elem].reaction.$[elem2].emoji": "🎩", // Emoji to set or update
           },
         },
         {
           arrayFilters: [
             {
-              "elem.user": value.messages[0].from,
-              "elem.id": value.messages[0].reaction.message_id,
+              "elem.id": "wamid.text1234", // Filter for the correct message ID
+              "elem.user": "918096255759", // Filter for the correct senderMobileNumber
             },
             {
-              "elem2.user": value.messages[0].from,
-            },
-            {
-              "elem3.user": value.messages[0].from,
-              "elem3.id": value.messages[0].reaction.message_id,
+              "elem2.user": "sample1", // Filter for the user whose reaction you want to update
             },
           ],
-          returnOriginal: false, // Optionally, to return the updated document
-          upsert: true, // Create the `messages.reaction` array if it doesn't exist
+          returnOriginal: false,
         }
       );
-      console.log(a, "aaaa")
-      if (a) return res.send({ msg: "Reaction Updated" });
-      let isReactionExists = await collection.findOneAndUpdate(
-        {
-          from: senderMobileNumber,
-          "messages.id": value.messages[0].reaction.message_id,
-          "messages.reaction.user": value.messages[0].from,
-        },
-        {
-          $push: {
-            "messages.$.reaction": {
-              emoji: value.messages[0].reaction.emoji,
-              user: value.messages[0].from,
-            },
-          },
-        }
-      );
-      if (isReactionExists) return res.send({ msg: "Reaction Updated" });
-      await collection.findOneAndUpdate(
-        {
-          from: senderMobileNumber,
-          "messages.id": value.messages[0].reaction.message_id,
-        },
-        {
-          $push: {
-            "messages.$.reaction": {
-              emoji: value.messages[0].reaction.emoji,
-              user: value.messages[0].from,
-            },
-          },
-        }
-      );
-      res.send({ msg: "Reaction sent" });
+      res.status(201).json({ msg: "Reaction updated successfully." });
     } else if (isSenderExists) {
       await collection.updateOne(
         { from: senderMobileNumber },
-        { $push: { messages: value.messages[0] } }
+        { $push: { messages: { ...value.messages[0], reaction: [] } } }
       );
       console.log("Document updated successfully.");
       res.status(201).json({ msg: "Document updated successfully." });

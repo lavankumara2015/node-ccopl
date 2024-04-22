@@ -140,3 +140,76 @@ try {
     .status(400)
     .json({ msg: "Something Went Wrong", error: error.message });
 }
+
+
+let a = await findOne({
+  from: senderMobileNumber,
+  "messages.id": value.messages[0].reaction.message_id,
+  "messages.reaction.user": value.messages[0].from,
+});
+await collection.findOneAndUpdate(
+  {
+    from: senderMobileNumber,
+    "messages.id": value.messages[0].reaction.message_id,
+    "messages.reaction.user": value.messages[0].from,
+  },
+  {
+    $set: {
+      "messages.$[elem].reaction": {
+        $ifNull: ["$messages.$[elem].reaction", []],
+      },
+      "messages.$[elem2].reaction.$[elem3].emoji":
+        value.messages[0].reaction.emoji,
+    },
+  },
+  {
+    arrayFilters: [
+      {
+        "elem.user": value.messages[0].from,
+        "elem.id": value.messages[0].reaction.message_id,
+      },
+      {
+        "elem2.user": value.messages[0].from,
+      },
+      {
+        "elem3.user": value.messages[0].from,
+        "elem3.id": value.messages[0].reaction.message_id,
+      },
+    ],
+    returnOriginal: false, // Optionally, to return the updated document
+    upsert: true, // Create the `messages.reaction` array if it doesn't exist
+  }
+);
+console.log(a, "aaaa");
+if (a) return res.send({ msg: "Reaction Updated" });
+let isReactionExists = await collection.findOneAndUpdate(
+  {
+    from: senderMobileNumber,
+    "messages.id": value.messages[0].reaction.message_id,
+    "messages.reaction.user": value.messages[0].from,
+  },
+  {
+    $push: {
+      "messages.$.reaction": {
+        emoji: value.messages[0].reaction.emoji,
+        user: value.messages[0].from,
+      },
+    },
+  }
+);
+if (isReactionExists) return res.send({ msg: "Reaction Updated" });
+await collection.findOneAndUpdate(
+  {
+    from: senderMobileNumber,
+    "messages.id": value.messages[0].reaction.message_id,
+  },
+  {
+    $push: {
+      "messages.$.reaction": {
+        emoji: value.messages[0].reaction.emoji,
+        user: value.messages[0].from,
+      },
+    },
+  }
+);
+res.send({ msg: "Reaction sent" });
