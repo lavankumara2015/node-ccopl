@@ -48,7 +48,12 @@ app.post("/webhook", async function (req, res) {
     });
     console.log(value.messages[0].type);
     if (value.messages[0].type === "reaction") {
-      let a = await collection.findOneAndUpdate(
+      let a = await findOne({
+        from: senderMobileNumber,
+        "messages.id": value.messages[0].reaction.message_id,
+        "messages.reaction.user": value.messages[0].from,
+      });
+      await collection.findOneAndUpdate(
         {
           from: senderMobileNumber,
           "messages.id": value.messages[0].reaction.message_id,
@@ -81,8 +86,7 @@ app.post("/webhook", async function (req, res) {
           upsert: true, // Create the `messages.reaction` array if it doesn't exist
         }
       );
-      console.log(a);
-      if (a) return console.log("returned");
+      if (a) return res.send({ msg: "Reaction Updated" });
       let isReactionExists = await collection.findOneAndUpdate(
         {
           from: senderMobileNumber,
