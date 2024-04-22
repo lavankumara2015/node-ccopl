@@ -46,32 +46,10 @@ app.post("/webhook", async function (req, res) {
     const isSenderExists = await collection.findOne({
       from: senderMobileNumber,
     });
-    console.log(value.messages[0].type);
+    console.log(isSenderExists, "send");
+    console.log(value);
+    console.log(value.messages[0]);
     if (value.messages[0].type === "reaction") {
-      await collection.findOneAndUpdate(
-        {
-          from: "918096255759", // Assuming this is the senderMobileNumber
-          "messages.id": "wamid.text1234", // Assuming this is the message ID you want to update
-          "messages.reaction.user": "sample1", // Assuming this is the user whose reaction you want to update
-        },
-        {
-          $set: {
-            "messages.$[elem].reaction.$[elem2].emoji": "🎩", // Emoji to set or update
-          },
-        },
-        {
-          arrayFilters: [
-            {
-              "elem.id": "wamid.text1234", // Filter for the correct message ID
-              "elem.user": "918096255759", // Filter for the correct senderMobileNumber
-            },
-            {
-              "elem2.user": "sample1", // Filter for the user whose reaction you want to update
-            },
-          ],
-          returnOriginal: false,
-        }
-      );
       res.status(201).json({ msg: "Reaction updated successfully." });
     } else if (isSenderExists) {
       await collection.updateOne(
@@ -87,7 +65,7 @@ app.post("/webhook", async function (req, res) {
         from: senderMobileNumber,
         coachId: "",
         coachName: "",
-        messages: [value.messages[0]],
+        messages: [{ ...value.messages[0], reaction: [] }],
         imageUrl: "",
         area: "",
         stage: "",
