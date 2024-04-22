@@ -86,6 +86,7 @@ app.post("/webhook", async function (req, res) {
           upsert: true, // Create the `messages.reaction` array if it doesn't exist
         }
       );
+      console.log(a, "aaaa")
       if (a) return res.send({ msg: "Reaction Updated" });
       let isReactionExists = await collection.findOneAndUpdate(
         {
