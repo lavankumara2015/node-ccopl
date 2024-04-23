@@ -51,17 +51,19 @@ app.post("/webhook", async function (req, res) {
     const { value } = changes[0];
 
     if (value.statuses !== undefined) {
-      return res.status(200).json({msg: "Not need status"})
+      return res.status(200).json({ msg: "Not need status" });
     }
     let isPatientExists = await patientsCollection.findOne({
-      from: value.messages[0].from,
+      patient_phone_number: value.messages[0].from,
     });
+
+    console.log(isPatientExists, value.messages[0].from);
 
     if (!isPatientExists) {
       await patientsCollection.insertOne(
         addTimestamps({
           patient_phone_number: value.messages[0].from,
-          messageIds: [value.messages[0].id],
+          message_ids: [value.messages[0].id],
           coach: "",
           area: "",
           stage: "",
@@ -75,7 +77,23 @@ app.post("/webhook", async function (req, res) {
       );
       return res.sendStatus(200);
     } else {
-      console.log(exists);
+      await messagesCollection.insertOne(
+        addTimestamps({
+          ...value.messages[0],
+          message_type: "Incoming",
+        })
+      );
+      console.log(value.messages[0].id)
+      await patientsCollection.findOneAndUpdate(
+        {
+          patient_phone_number: value.messages[0].from,
+        },
+        {
+          $push: {
+            message_ids: value.messages[0].id,
+          },
+        }
+      );
     }
     res.send({ msg: "Okay" });
   } catch (error) {
