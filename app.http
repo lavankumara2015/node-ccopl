@@ -47,3 +47,19 @@ Content-Type: application/json
     }
   ]
 }
+
+
+#########
+
+POST http://localhost:3005/message
+
+Content-Type: application/json
+
+{
+    "messaging_product": "whatsapp",
+    "to": "918096255759",
+    "type": "text",
+    "data": {
+        "text": "Hmmmmmmmmmmmmmmm"
+    }
+}

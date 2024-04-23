@@ -45,12 +45,12 @@ app.post("/webhook", async function (req, res) {
   try {
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
-    console.log(JSON.stringify(req.body));
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
 
     if (value.statuses !== undefined) {
+      console.log("this applied");
       return res.status(200).json({ msg: "Not need status" });
     }
     let isPatientExists = await patientsCollection.findOne({
@@ -62,6 +62,8 @@ app.post("/webhook", async function (req, res) {
     if (!isPatientExists) {
       await patientsCollection.insertOne(
         addTimestamps({
+          name: value?.contacts?.profile?.name || "",
+          image_url: "",
           patient_phone_number: value.messages[0].from,
           message_ids: [value.messages[0].id],
           coach: "",
@@ -83,7 +85,7 @@ app.post("/webhook", async function (req, res) {
           message_type: "Incoming",
         })
       );
-      console.log(value.messages[0].id)
+      console.log(value.messages[0].id);
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: value.messages[0].from,
@@ -131,7 +133,8 @@ function getMessageObject(data, type = "text") {
 
 app.post("/message", async function (request, response) {
   try {
-    const { type, data } = await request.body;
+    const { type, data, to } = await request.body;
+    let collection = await db.collection("messages")
     let formattedObject = getMessageObject(data, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
@@ -139,15 +142,36 @@ app.post("/message", async function (request, response) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          authorization:
-            "Bearer EABqxsZAVtAi8BO4TjmZBatrXr0IlGIZAOP7xVpt1zqCLZCOL5TPQ6n2Se3ZCeYTqJEa3LrssVHS8i9wpTwdSW81e7lRnBrLqjkETZCjRCvlp9ZBne5ZCpfOv86t4AWU1htKtEhvHfNM7eJIrSRThr5LIamYejQjmkVI1Bhi0UVctw0bWF1eTNknbTLAvOmTI11qgvorpeoGkOl9npZCfksEYZD",
+          Authorization:
+            "Bearer EABqxsZAVtAi8BOwPlAZApIQv6MjiAtYA19t7o4dZBOjjvgbJsIDDbTggtX6Ay7FEf6ZAAL9vRL1TvtVFWYj4wIrIKEBjtKRZBhnLi8lcpX1rdjgNZClzaN4e6XEZC7ajq3PWdRCZBOviBjTs8sfRsZBfy27SUFRizHCxNexwicVq5DKRE2LVZCZBHtynJIrl2ixDypt8canOjC9ZB0ebEcg1vlAZD",
         },
         body: JSON.stringify(formattedObject),
       }
     );
-    console.log(ourResponse);
     if (ourResponse.ok) {
-      console.log("Yes all is well");
+      let responseData = await ourResponse.json();
+      let coachMessage = addTimestamps({
+        from: to, 
+        id: responseData.messages[0].id, 
+        type:"text",
+        text: {
+          body: data.text
+        }, 
+        message_type: "Outgoing",   
+      })
+      await messagesCollection.insertOne(
+        coachMessage
+      );
+      await patientsCollection.findOneAndUpdate(
+        {
+          patient_phone_number: to,
+        },
+        {
+          $push: {
+            message_ids: responseData.messages[0].id,
+          },
+        }
+      );
       response.status(201).json({ msg: "Created Successfully" });
     } else {
       response.status(401).json({ msg: "Something Unexpected" });

@@ -169,3 +169,13 @@ let c = {
     },
   ],
 };
+
+let a = {
+  messaging_product: "whatsapp",
+  contacts: [{ input: "918096255759", wa_id: "918096255759" }],
+  messages: [
+    {
+      id: "wamid.HBgMOTE4MDk2MjU1NzU5FQIAERgSMUUwNDIwOEIwREE3QThCNjAwAA==",
+    },
+  ],
+};
