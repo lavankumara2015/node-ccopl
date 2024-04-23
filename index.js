@@ -92,7 +92,7 @@ app.post("/webhook", async function (req, res) {
                         in: {
                           $cond: {
                             if: { $eq: ["$$reaction.user", value.messages[0].from] }, // Find the reaction object for the user
-                            then: { user: value.messages[0].from, emoji: "❤️" }, // Update emoji if user exists
+                            then: { user: value.messages[0].from, emoji: value.messages[0].reaction.emoji }, // Update emoji if user exists
                             else: "$$reaction",
                           },
                         },
@@ -101,7 +101,7 @@ app.post("/webhook", async function (req, res) {
                     else: {
                       $concatArrays: [
                         "$reactions",
-                        [{ user: value.messages[0].from, emoji: "hearts" }],
+                        [{ user: value.messages[0].from, emoji: value.messages[0].reaction.emoji }],
                       ],
                     }, // Add new reaction if user doesn't exist
                   },
