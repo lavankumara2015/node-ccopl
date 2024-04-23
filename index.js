@@ -50,12 +50,13 @@ app.post("/webhook", async function (req, res) {
     const { changes } = entry[0];
     const { value } = changes[0];
 
-    if (value.messages[0].statuses !== undefined) {
+    if (value.statuses !== undefined) {
       return res.send({ msg: "This is status" });
     }
     let isPatientExists = await patientsCollection.findOne({
       from: value.messages[0].from,
     });
+
     if (!isPatientExists) {
       await patientsCollection.insertOne(
         addTimestamps({
