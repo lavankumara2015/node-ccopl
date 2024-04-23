@@ -141,7 +141,6 @@ try {
     .json({ msg: "Something Went Wrong", error: error.message });
 }
 
-
 let a = await findOne({
   from: senderMobileNumber,
   "messages.id": value.messages[0].reaction.message_id,
@@ -214,53 +213,59 @@ await collection.findOneAndUpdate(
 );
 res.send({ msg: "Reaction sent" });
 
-
-
-
 let query = db.users.updateOne(
+  {
+    username: "user123",
+    "messages.message_id": "msg001",
+  },
+  [
     {
-        "username": "user123",
-        "messages.message_id": "msg001"
+      $set: {
+        "messages.$[msg].reactions": {
+          $cond: {
+            if: {
+              $eq: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$messages.$[msg].reactions",
+                      cond: { $eq: ["$$this.user", "user456"] },
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            then: {
+              $concatArrays: [
+                "$messages.$[msg].reactions",
+                [{ type: "like", user: "user456" }],
+              ],
+            },
+            else: {
+              $map: {
+                input: "$messages.$[msg].reactions",
+                as: "reaction",
+                in: {
+                  $cond: {
+                    if: { $eq: ["$$reaction.user", "user456"] },
+                    then: { type: "like", user: "user456" },
+                    else: "$$reaction",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
-    [
-        {
-            $set: {
-                "messages.$[msg].reactions": {
-                    $cond: {
-                        if: {
-                            $eq: [
-                                { 
-                                    $size: {
-                                        $filter: {
-                                            input: "$messages.$[msg].reactions",
-                                            cond: { $eq: ["$$this.user", "user456"] }
-                                        }
-                                    }
-                                },
-                                0
-                            ]
-                        },
-                        then: { $concatArrays: ["$messages.$[msg].reactions", [{ "type": "like", "user": "user456" }]] },
-                        else: {
-                            $map: {
-                                input: "$messages.$[msg].reactions",
-                                as: "reaction",
-                                in: {
-                                    $cond: {
-                                        if: { $eq: ["$$reaction.user", "user456"] },
-                                        then: { "type": "like", "user": "user456" },
-                                        else: "$$reaction"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    ],
-    {
-        arrayFilters: [{ "msg.message_id": "msg001" }],
-        upsert: false // Set to true if the whole document might not exist and you want to create it
-    }
-)
+  ],
+  {
+    arrayFilters: [{ "msg.message_id": "msg001" }],
+    upsert: false, // Set to true if the whole document might not exist and you want to create it
+  }
+);
+
+db.messages.updateMany({ reactions: { $exists: false } }, { reactions: [] });
+
+db.messages.updateMany({ reactions: { $exists: false } },{ $set: { reactions: [] } });

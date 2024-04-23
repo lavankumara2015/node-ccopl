@@ -53,13 +53,43 @@ app.post("/webhook", async function (req, res) {
       console.log("this applied");
       return res.status(200).json({ msg: "Not need status" });
     }
-    let isPatientExists = await patientsCollection.findOne({
+    let patient = await patientsCollection.findOne({
       patient_phone_number: value.messages[0].from,
     });
+    if (value.messages[0].type === "reaction") {
+      let message = await messagesCollection.findOne({
+        id: value.messages[0].reaction.message_id,
+      });
+      if (!patient) {
+        await patientsCollection.insertOne(
+          addTimestamps({
+            name: value?.contacts[0]?.profile?.name || "",
+            image_url: "",
+            patient_phone_number: value.messages[0].from,
+            message_ids: [value.messages[0].id],
+            coach: "",
+            area: "",
+            stage: "",
+          })
+        );
+      } else if (message) {
+        db.messages.updateOne(
+          {
+            id: value.messages[0].reaction.message_id,
+          },
+          {
+            $set: {
+              updated_at: new Date(),
+            },
+            $addToSet: {
+              reactions: { $each: [{ user: value.messages[0].from, emoji: "hearts" }] },
+            },
+          }
+        );
+      }
 
-    console.log(isPatientExists, value.messages[0].from);
-
-    if (!isPatientExists) {
+      return res.send({ msg: "Reaction Updated" });
+    } else if (!patient) {
       await patientsCollection.insertOne(
         addTimestamps({
           name: value?.contacts[0]?.profile?.name || "",
@@ -75,6 +105,7 @@ app.post("/webhook", async function (req, res) {
         addTimestamps({
           ...value.messages[0],
           message_type: "Incoming",
+          reactions: [],
         })
       );
       return res.sendStatus(200);
@@ -83,6 +114,7 @@ app.post("/webhook", async function (req, res) {
         addTimestamps({
           ...value.messages[0],
           message_type: "Incoming",
+          reactions: [],
         })
       );
       console.log(value.messages[0].id);
@@ -97,7 +129,7 @@ app.post("/webhook", async function (req, res) {
         }
       );
     }
-    res.send({ msg: "Okay" });
+    res.send({ msg: "Reaction Updated" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
   }
@@ -152,17 +184,15 @@ app.post("/message", async function (request, response) {
     if (ourResponse.ok) {
       let responseData = await ourResponse.json();
       let coachMessage = addTimestamps({
-        from: to, 
-        id: responseData.messages[0].id, 
-        type:"text",
+        from: to,
+        id: responseData.messages[0].id,
+        type: "text",
         text: {
-          body: data.text
-        }, 
-        message_type: "Outgoing",   
-      })
-      await messagesCollection.insertOne(
-        coachMessage
-      );
+          body: data.text,
+        },
+        message_type: "Outgoing",
+      });
+      await messagesCollection.insertOne(coachMessage);
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: to,
