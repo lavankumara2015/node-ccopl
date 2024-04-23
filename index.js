@@ -134,7 +134,8 @@ function getMessageObject(data, type = "text") {
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
-    let collection = await db.collection("messages")
+    let patientsCollection = await db.collection("patients");
+    let messagesCollection = await db.collection("messages");
     let formattedObject = getMessageObject(data, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
