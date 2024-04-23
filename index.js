@@ -43,6 +43,7 @@ const addTimestamps = (document) => {
 
 app.post("/webhook", async function (req, res) {
   try {
+    console.log(JSON.stringify(req.body));
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     const { entry } = req.body;
@@ -73,19 +74,62 @@ app.post("/webhook", async function (req, res) {
           })
         );
       } else if (message) {
-        db.messages.updateOne(
+        await messagesCollection.updateOne(
           {
             id: value.messages[0].reaction.message_id,
           },
-          {
-            $set: {
-              updated_at: new Date(),
+          [
+            {
+              $set: {
+                updated_at: new Date(),
+                reactions: {
+                  $cond: {
+                    if: { $in: [value.messages[0].from, "$reactions.user"] }, // Check if user exists in reactions array
+                    then: {
+                      $map: {
+                        input: "$reactions",
+                        as: "reaction",
+                        in: {
+                          $cond: {
+                            if: { $eq: ["$$reaction.user", value.messages[0].from] }, // Find the reaction object for the user
+                            then: { user: value.messages[0].from, emoji: "❤️" }, // Update emoji if user exists
+                            else: "$$reaction",
+                          },
+                        },
+                      },
+                    },
+                    else: {
+                      $concatArrays: [
+                        "$reactions",
+                        [{ user: value.messages[0].from, emoji: "hearts" }],
+                      ],
+                    }, // Add new reaction if user doesn't exist
+                  },
+                },
+              },
             },
-            $addToSet: {
-              reactions: { $each: [{ user: value.messages[0].from, emoji: "hearts" }] },
-            },
-          }
+          ]
         );
+        // messagesCollection.updateOne(
+        //   {
+        //     id: value.messages[0].reaction.message_id,
+        //   },
+        //   {
+        //     $set: {
+        //       updated_at: new Date(),
+        //     },
+        //     $addToSet: {
+        //       reactions: {
+        //         $each: [
+        //           {
+        //             user: value.messages[0].from,
+        //             emoji: value.messages[0].reaction.emoji,
+        //           },
+        //         ],
+        //       },
+        //     },
+        //   }
+        // );
       }
 
       return res.send({ msg: "Reaction Updated" });
@@ -117,7 +161,7 @@ app.post("/webhook", async function (req, res) {
           reactions: [],
         })
       );
-      console.log(value.messages[0].id);
+      console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: value.messages[0].from,
