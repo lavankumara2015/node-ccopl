@@ -91,8 +91,13 @@ app.post("/webhook", async function (req, res) {
                         as: "reaction",
                         in: {
                           $cond: {
-                            if: { $eq: ["$$reaction.user", value.messages[0].from] }, // Find the reaction object for the user
-                            then: { user: value.messages[0].from, emoji: value.messages[0].reaction.emoji }, // Update emoji if user exists
+                            if: {
+                              $eq: ["$$reaction.user", value.messages[0].from],
+                            }, // Find the reaction object for the user
+                            then: {
+                              user: value.messages[0].from,
+                              emoji: value.messages[0].reaction.emoji,
+                            }, // Update emoji if user exists
                             else: "$$reaction",
                           },
                         },
@@ -101,7 +106,12 @@ app.post("/webhook", async function (req, res) {
                     else: {
                       $concatArrays: [
                         "$reactions",
-                        [{ user: value.messages[0].from, emoji: value.messages[0].reaction.emoji }],
+                        [
+                          {
+                            user: value.messages[0].from,
+                            emoji: value.messages[0].reaction.emoji,
+                          },
+                        ],
                       ],
                     }, // Add new reaction if user doesn't exist
                   },
@@ -110,26 +120,6 @@ app.post("/webhook", async function (req, res) {
             },
           ]
         );
-        // messagesCollection.updateOne(
-        //   {
-        //     id: value.messages[0].reaction.message_id,
-        //   },
-        //   {
-        //     $set: {
-        //       updated_at: new Date(),
-        //     },
-        //     $addToSet: {
-        //       reactions: {
-        //         $each: [
-        //           {
-        //             user: value.messages[0].from,
-        //             emoji: value.messages[0].reaction.emoji,
-        //           },
-        //         ],
-        //       },
-        //     },
-        //   }
-        // );
       }
 
       return res.send({ msg: "Reaction Updated" });
@@ -179,12 +169,12 @@ app.post("/webhook", async function (req, res) {
   }
 });
 
-function getMessageObject(data, type = "text") {
+function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
-      to: "918096255759",
+      to: to,
       type: "text",
       text: {
         preview_url: false,
@@ -196,15 +186,14 @@ function getMessageObject(data, type = "text") {
     return {
       messaging_product: "whatsapp",
       recipient_type: "individual",
-      to: "918096255759",
+      to: to,
       type: "reaction",
       reaction: {
-        message_id:
-          "wamid.HBgMOTE4MDk2MjU1NzU5FQIAEhggQUU0MjZDMUJCMUEyODQ1NTI3NjZDM0M0NEU1RjY2RDgA",
+        message_id: data.message_id,
         emoji: data.emoji,
       },
     };
-  }
+  } 
 }
 
 app.post("/message", async function (request, response) {
@@ -212,7 +201,7 @@ app.post("/message", async function (request, response) {
     const { type, data, to } = await request.body;
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
-    let formattedObject = getMessageObject(data, type);
+    let formattedObject = getMessageObject(data, to, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -228,25 +217,78 @@ app.post("/message", async function (request, response) {
     if (ourResponse.ok) {
       let responseData = await ourResponse.json();
       let coachMessage = addTimestamps({
+        coach_phone_number: "+15556105902",
         from: to,
+        coach_name: "",
         id: responseData.messages[0].id,
-        type: "text",
+        type: type,
         text: {
           body: data.text,
         },
+        reactions: [],
         message_type: "Outgoing",
       });
-      await messagesCollection.insertOne(coachMessage);
-      await patientsCollection.findOneAndUpdate(
-        {
-          patient_phone_number: to,
-        },
-        {
-          $push: {
-            message_ids: responseData.messages[0].id,
+      if (type !== "reaction") {
+        await messagesCollection.insertOne(coachMessage);
+        await patientsCollection.findOneAndUpdate(
+          {
+            patient_phone_number: to,
           },
-        }
-      );
+          {
+            $push: {
+              message_ids: responseData.messages[0].id,
+            },
+          }
+        );
+      } else {
+        delete coachMessage.text;
+        await messagesCollection.updateOne(
+          {
+            id: data.message_id,
+          },
+          [
+            {
+              $set: {
+                updated_at: new Date(),
+                reactions: {
+                  $cond: {
+                    if: { $in: [to, "$reactions.user"] }, // Check if user exists in reactions array
+                    then: {
+                      $map: {
+                        input: "$reactions",
+                        as: "reaction",
+                        in: {
+                          $cond: {
+                            if: {
+                              $eq: ["$$reaction.user", to],
+                            }, // Find the reaction object for the user
+                            then: {
+                              user: to,
+                              emoji: data.emoji,
+                            }, // Update emoji if user exists
+                            else: "$$reaction",
+                          },
+                        },
+                      },
+                    },
+                    else: {
+                      $concatArrays: [
+                        "$reactions",
+                        [
+                          {
+                            user: to,
+                            emoji: data.emoji,
+                          },
+                        ],
+                      ],
+                    }, // Add new reaction if user doesn't exist
+                  },
+                },
+              },
+            },
+          ]
+        );
+      }
       response.status(201).json({ msg: "Created Successfully" });
     } else {
       response.status(401).json({ msg: "Something Unexpected" });
