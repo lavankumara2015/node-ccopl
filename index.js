@@ -41,6 +41,39 @@ const addTimestamps = (document) => {
   return document;
 };
 
+const MediaFunction = async (media_id) => {
+  const ourResponse = await fetch(
+    `https://graph.facebook.com/v19.0/${media_id}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        authorization:
+          "Bearer EABqxsZAVtAi8BOyDK2yIKgc03Xqh3NwlO5ccV7nNii8bWgrNeZCbZAaGE6AfFZByWTSr7ZB2XJwNVqBypekU8MOgyMWqVAtjZC5rvxXqmSeKPH0j4jjY32lc3aJSvdt4kyWryRROhjEcEjf0dgh49ZCEnPW1fJ4ASDANZBSA0Bkdn1Wn5NZCF09WLeB4tGGCgJ0Sq6gJZCt54TYJ92R9z145YZD",
+      },
+    }
+  );
+  const ourData = await ourResponse.json();
+  console.log(ourData.url);
+  if (ourData.url !== undefined) {
+    let config = {
+      method: "get",
+      maxBodyLength: Infinity,
+      url: `${ourData.url}`,
+      responseType: "arraybuffer",
+      headers: {
+        Authorization:
+          "Bearer EABqxsZAVtAi8BOzBJzTMZAPOb0rkxlDFjyrSurIgbCJT5kxFG0tsJoXOJPbw0zDgATWRVUurO9OKeX25LRT8gMHZBnhUvhxMXChFLO4SbvBhcksdI4FZCUv2WEBAND1laR2NFSJ3TswCENAfgzhIoj9kNyP0d3ZCizYVrICJK3bscGTBAi53XhRSuRWiSuGGsdxIOdi012fAPLJrZALcUZD",
+      },
+    };
+    const response = await axios.request(config);
+    const collection = db.collection("media");
+    let item = await collection.insertOne({ image: response.data });
+    console.log(item)
+
+  }
+};
+
 app.post("/webhook", async function (req, res) {
   try {
     console.log(JSON.stringify(req.body));
@@ -143,6 +176,32 @@ app.post("/webhook", async function (req, res) {
         })
       );
       return res.sendStatus(200);
+    } else if (["image", "audio", "video"].includes(value.messages[0].type)) {
+      if (!patient) {
+        await patientsCollection.insertOne(
+          addTimestamps({
+            name: value?.contacts[0]?.profile?.name || "",
+            image_url: "",
+            patient_phone_number: value.messages[0].from,
+            message_ids: [value.messages[0].id],
+            coach: "",
+            area: "",
+            stage: "",
+          })
+        );
+
+        let videoFromColl = await MediaFunction(value.messages[0][`${type}`].id)
+        console.log(videoFromColl)
+        
+        await messagesCollection.insertOne(
+          addTimestamps({
+            ...value.messages[0],
+          message_type: "Incoming",
+          reactions: [],
+          media_id_in_collection: ""
+          })
+        )
+      }
     } else {
       await messagesCollection.insertOne(
         addTimestamps({
@@ -193,7 +252,7 @@ function getMessageObject(data, to, type = "text") {
         emoji: data.emoji,
       },
     };
-  } 
+  }
 }
 
 app.post("/message", async function (request, response) {
