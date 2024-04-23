@@ -37,7 +37,7 @@ app.get("/webhook", function (req, res) {
 const addTimestamps = (document) => {
   const now = new Date();
   document.created_at = now;
-  document.updated_at = now;
+  document.updated_at = null;
   return document;
 };
 
@@ -73,7 +73,7 @@ app.post("/webhook", async function (req, res) {
           message_type: "Incoming",
         })
       );
-      res.sendStatus(200);
+      return res.sendStatus(200);
     } else {
       console.log(exists);
     }

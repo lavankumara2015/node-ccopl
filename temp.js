@@ -140,3 +140,32 @@ adb.patients.updateOne(
     upsert: false,
   }
 );
+
+let c = {
+  object: "whatsapp_business_account",
+  entry: [
+    {
+      id: "293442527182997",
+      changes: [
+        {
+          value: {
+            messaging_product: "whatsapp",
+            metadata: {
+              display_phone_number: "15556105902",
+              phone_number_id: "232950459911097",
+            },
+            statuses: [
+              {
+                id: "wamid.HBgMOTE3ODk1NDQxNDI5FQIAERgSMjNFRERFQkU0QzlBMUU3NkIyAA==",
+                status: "read",
+                timestamp: "1713847878",
+                recipient_id: "917895441429",
+              },
+            ],
+          },
+          field: "messages",
+        },
+      ],
+    },
+  ],
+};
