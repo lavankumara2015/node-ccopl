@@ -77,3 +77,66 @@ let text = {
     },
   ],
 };
+
+adb.patients.updateOne(
+  {
+    "messages.id": 203410447948670,
+  },
+  [
+    {
+      $set: {
+        "messages.$[msg].reactions": {
+          $cond: {
+            if: {
+              $eq: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$messages.$[msg].reactions",
+                      cond: {
+                        $eq: ["this.user", "918096255759"],
+                      },
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            then: {
+              $concatArrays: [
+                "$messages.$[msg].reactions",
+                [{ emoji: "🥵", user: "918096255759" }],
+              ],
+            },
+            else: {
+              $map: {
+                input: "$messages.$[msg].reactions",
+                as: "reaction",
+                in: {
+                  $cond: {
+                    if: {
+                      $eq: ["$$reaction.user", "918096255759"],
+                    },
+                    then: {
+                      emoji: "😐",
+                      user: "918096255759",
+                    },
+                    else: "$$reaction",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ],
+  {
+    arrayFilters: [
+      {
+        "msg.message_id": "203410447948670",
+      },
+    ],
+    upsert: false,
+  }
+);

@@ -46,10 +46,13 @@ app.post("/webhook", async function (req, res) {
     const isSenderExists = await collection.findOne({
       from: senderMobileNumber,
     });
-    console.log(isSenderExists, "send");
-    console.log(value);
-    console.log(value.messages[0]);
+
     if (value.messages[0].type === "reaction") {
+      let obj = await collection.findOne({
+        from: senderMobileNumber,
+        "messages.id": value.messages[0].reaction.message_id,
+      });
+      
       res.status(201).json({ msg: "Reaction updated successfully." });
     } else if (isSenderExists) {
       await collection.updateOne(
@@ -158,6 +161,19 @@ app.post("/patient", async (req, res) => {
     const { name } = req.body;
   } catch (error) {
     res.status(201).json({ msg: "Something Went Wrong Message", status: 400 });
+  }
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    const collection = await db.collection("patients");
+    let data = await collection.find({}, { messages: 1 });
+    data = await data.toArray();
+    console.log(data);
+    res.send({ data: data });
+  } catch (error) {
+    res.status(201).json({ msg: "Something Went Wrong", status: 400 });
+    console.log(error.message);
   }
 });
 
