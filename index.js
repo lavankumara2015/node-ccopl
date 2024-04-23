@@ -36,46 +36,21 @@ app.get("/webhook", function (req, res) {
 
 app.post("/webhook", async function (req, res) {
   try {
+    let collection = await db.collection("patients");
+    console.log(JSON.stringify(req.body))
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    const senderMobileNumber = value.messages[0].from;
-    const patientName = value?.contacts[0]?.profile?.name || "";
-
-    const collection = await db.collection("patients");
-    const isSenderExists = await collection.findOne({
-      from: senderMobileNumber,
+    let isPatientExists = await collection.findOne({
+      from: value.messages[0].from,
     });
-
-    if (value.messages[0].type === "reaction") {
-      let obj = await collection.findOne({
-        from: senderMobileNumber,
-        "messages.id": value.messages[0].reaction.message_id,
-      });
-      
-      res.status(201).json({ msg: "Reaction updated successfully." });
-    } else if (isSenderExists) {
-      await collection.updateOne(
-        { from: senderMobileNumber },
-        { $push: { messages: { ...value.messages[0], reaction: [] } } }
-      );
-      console.log("Document updated successfully.");
-      res.status(201).json({ msg: "Document updated successfully." });
+    console.log(isPatientExists);
+    if (!isPatientExists) {
+      collection.insertOne({ ...value.messages[0], messageIds: [] });
     } else {
-      console.log("option 2");
-      await collection.insertOne({
-        name: patientName,
-        from: senderMobileNumber,
-        coachId: "",
-        coachName: "",
-        messages: [{ ...value.messages[0], reaction: [] }],
-        imageUrl: "",
-        area: "",
-        stage: "",
-      });
-      console.log("New document inserted successfully.");
-      res.status(201).json({ msg: "Created Successfully" });
+      collection.findOneAndUpdate({patients})
     }
+    res.send({ msg: "Okay" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
   }

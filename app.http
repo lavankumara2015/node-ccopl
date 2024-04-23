@@ -1,1 +1,49 @@
 GET http://localhost:3005/users
+
+
+#####
+
+
+POST http://localhost:3005/webhook
+
+Content-Type: application/json
+
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "293442527182997",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15556105902",
+              "phone_number_id": "232950459911097"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Lavan Adicherla"
+                },
+                "wa_id": "918096255759"
+              }
+            ],
+            "messages": [
+              {
+                "from": "918096255759",
+                "id": "203410447948670",
+                "timestamp": "1713500803",
+                "type": "text",
+                "text": {
+                  "body": "hello mam"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
