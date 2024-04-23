@@ -67,7 +67,13 @@ app.post("/webhook", async function (req, res) {
           stage: "",
         })
       );
-      await messagesCollection.insertOne();
+      await messagesCollection.insertOne(
+        addTimestamps({
+          ...value.messages[0],
+          message_type: "Incoming",
+        })
+      );
+      res.sendStatus(200);
     } else {
       console.log(exists);
     }
