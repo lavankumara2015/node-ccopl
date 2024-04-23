@@ -62,7 +62,7 @@ app.post("/webhook", async function (req, res) {
     if (!isPatientExists) {
       await patientsCollection.insertOne(
         addTimestamps({
-          name: value?.contacts?.profile?.name || "",
+          name: value?.contacts[0]?.profile?.name || "",
           image_url: "",
           patient_phone_number: value.messages[0].from,
           message_ids: [value.messages[0].id],
