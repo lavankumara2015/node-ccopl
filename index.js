@@ -51,7 +51,7 @@ app.post("/webhook", async function (req, res) {
     const { value } = changes[0];
 
     if (value.statuses !== undefined) {
-      return res.send({ msg: "This is status" });
+      return res.status(200).json({msg: "Not need status"})
     }
     let isPatientExists = await patientsCollection.findOne({
       from: value.messages[0].from,
