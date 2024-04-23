@@ -34,21 +34,41 @@ app.get("/webhook", function (req, res) {
   res.sendStatus(200);
 });
 
+const addTimestamps = (document) => {
+  const now = new Date();
+  document.created_at = now;
+  document.updated_at = now;
+  return document;
+};
+
 app.post("/webhook", async function (req, res) {
   try {
-    let collection = await db.collection("patients");
-    console.log(JSON.stringify(req.body))
+    let patientsCollection = await db.collection("patients");
+    let messagesCollection = await db.collection("messages");
+    console.log(JSON.stringify(req.body));
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    let isPatientExists = await collection.findOne({
+
+    if (value.messages[0].from === undefined){
+      console.log("Coach Message")
+    }
+    let isPatientExists = await patientsCollection.findOne({
       from: value.messages[0].from,
     });
-    console.log(isPatientExists);
     if (!isPatientExists) {
-      collection.insertOne({ ...value.messages[0], messageIds: [] });
+      await patientsCollection.insertOne(
+        addTimestamps({
+          patient_phone_number: value.messages[0].from,
+          messageIds: [value.messages[0].id],
+          coach: "",
+          area: "",
+          stage: "",
+        })
+      );
+      await messagesCollection.insertOne()
     } else {
-      collection.findOneAndUpdate({patients})
+      console.log(exists)
     }
     res.send({ msg: "Okay" });
   } catch (error) {
