@@ -50,8 +50,8 @@ app.post("/webhook", async function (req, res) {
     const { changes } = entry[0];
     const { value } = changes[0];
 
-    if (value.messages[0].from === undefined){
-      console.log("Coach Message")
+    if (value.messages[0].statuses !== undefined) {
+      return res.send({ msg: "This is status" });
     }
     let isPatientExists = await patientsCollection.findOne({
       from: value.messages[0].from,
@@ -66,9 +66,9 @@ app.post("/webhook", async function (req, res) {
           stage: "",
         })
       );
-      await messagesCollection.insertOne()
+      await messagesCollection.insertOne();
     } else {
-      console.log(exists)
+      console.log(exists);
     }
     res.send({ msg: "Okay" });
   } catch (error) {
