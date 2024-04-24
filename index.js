@@ -176,36 +176,7 @@ app.post("/webhook", async function (req, res) {
         })
       );
       return res.sendStatus(200);
-    } else if (["image", "audio", "video"].includes(value.messages[0].type)) {
-      if (!patient) {
-        await patientsCollection.insertOne(
-          addTimestamps({
-            name: value?.contacts[0]?.profile?.name || "",
-            image_url: "",
-            patient_phone_number: value.messages[0].from,
-            message_ids: [value.messages[0].id],
-            coach: "",
-            area: "",
-            stage: "",
-          })
-        );
-
-        let videoFromColl = await MediaFunction(
-          value.messages[0][`${type}`].id
-        );
-        console.log(videoFromColl, "Media");
-
-        await messagesCollection.insertOne(
-          addTimestamps({
-            ...value.messages[0],
-            message_type: "Incoming",
-            reactions: [],
-            media_id_in_collection: "",
-            delivery_status: "",
-          })
-        );
-      }
-    } else {
+    }  else {
       await messagesCollection.insertOne(
         addTimestamps({
           ...value.messages[0],
