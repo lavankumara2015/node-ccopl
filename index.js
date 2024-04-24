@@ -191,7 +191,7 @@ app.post("/webhook", async function (req, res) {
         );
 
         let videoFromColl = await MediaFunction(value.messages[0][`${type}`].id)
-        console.log(videoFromColl)
+        console.log(videoFromColl, "Media")
         
         await messagesCollection.insertOne(
           addTimestamps({
