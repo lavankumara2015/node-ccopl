@@ -69,8 +69,7 @@ const MediaFunction = async (media_id) => {
     const response = await axios.request(config);
     const collection = db.collection("media");
     let item = await collection.insertOne({ image: response.data });
-    console.log(item)
-
+    console.log(item);
   }
 };
 
@@ -82,6 +81,7 @@ app.post("/webhook", async function (req, res) {
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
+    console.log(value.messages[0].type)
 
     if (value.statuses !== undefined) {
       console.log("this applied");
@@ -190,17 +190,20 @@ app.post("/webhook", async function (req, res) {
           })
         );
 
-        let videoFromColl = await MediaFunction(value.messages[0][`${type}`].id)
-        console.log(videoFromColl, "Media")
-        
+        let videoFromColl = await MediaFunction(
+          value.messages[0][`${type}`].id
+        );
+        console.log(videoFromColl, "Media");
+
         await messagesCollection.insertOne(
           addTimestamps({
             ...value.messages[0],
-          message_type: "Incoming",
-          reactions: [],
-          media_id_in_collection: ""
+            message_type: "Incoming",
+            reactions: [],
+            media_id_in_collection: "",
+            delivery_status: "",
           })
-        )
+        );
       }
     } else {
       await messagesCollection.insertOne(
@@ -208,6 +211,7 @@ app.post("/webhook", async function (req, res) {
           ...value.messages[0],
           message_type: "Incoming",
           reactions: [],
+          delivery_status: "",
         })
       );
       console.log(value.messages[0].id, "jjjj");
@@ -286,6 +290,7 @@ app.post("/message", async function (request, response) {
         },
         reactions: [],
         message_type: "Outgoing",
+        delivery_status: "",
       });
       if (type !== "reaction") {
         await messagesCollection.insertOne(coachMessage);
