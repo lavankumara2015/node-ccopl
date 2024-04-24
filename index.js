@@ -276,6 +276,7 @@ app.post("/message", async function (request, response) {
           }
         );
       } else {
+        let num = "+15556105902"
         delete coachMessage.text;
         await messagesCollection.updateOne(
           {
@@ -287,7 +288,7 @@ app.post("/message", async function (request, response) {
                 updated_at: new Date(),
                 reactions: {
                   $cond: {
-                    if: { $in: [to, "$reactions.user"] }, // Check if user exists in reactions array
+                    if: { $in: [num, "$reactions.user"] }, // Check if user exists in reactions array
                     then: {
                       $map: {
                         input: "$reactions",
@@ -295,10 +296,10 @@ app.post("/message", async function (request, response) {
                         in: {
                           $cond: {
                             if: {
-                              $eq: ["$$reaction.user", to],
+                              $eq: ["$$reaction.user", num],
                             }, // Find the reaction object for the user
                             then: {
-                              user: to,
+                              user: num,
                               emoji: data.emoji,
                             }, // Update emoji if user exists
                             else: "$$reaction",
@@ -311,7 +312,7 @@ app.post("/message", async function (request, response) {
                         "$reactions",
                         [
                           {
-                            user: to,
+                            user: num,
                             emoji: data.emoji,
                           },
                         ],
