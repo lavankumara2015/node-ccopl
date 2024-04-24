@@ -288,6 +288,7 @@ function getMessageObject(data, to, type = "text") {
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
+    console.log(type, data)
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     let formattedObject = getMessageObject(data, to, type);
@@ -298,15 +299,13 @@ app.post("/message", async function (request, response) {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "EABqxsZAVtAi8BO8MgpBl0CgxmV2ekFPfFwpBCiKZBvkFZAvmsaM1dZAUmLO0SV1JfqXgurWDDNcAwzvHGh3n1WsB6CoGgz1hhxlZB0WAUJrGE7L4bxfX5aEzDTECiaZBiupZALdPK7HTVapjJhe5lFDCoz6qgosSlCpPy2jXfFuCsWNeuhyuEQWeWilemRh8VodXew0yRQjLAviGflrzdAZD",
+            "Bearer EABqxsZAVtAi8BO8MgpBl0CgxmV2ekFPfFwpBCiKZBvkFZAvmsaM1dZAUmLO0SV1JfqXgurWDDNcAwzvHGh3n1WsB6CoGgz1hhxlZB0WAUJrGE7L4bxfX5aEzDTECiaZBiupZALdPK7HTVapjJhe5lFDCoz6qgosSlCpPy2jXfFuCsWNeuhyuEQWeWilemRh8VodXew0yRQjLAviGflrzdAZD",
         },
         body: JSON.stringify(formattedObject),
       }
     );
-    let l = await ourResponse.json()
-    console.log(l)
-    if (ourResponse.ok) {
-      let responseData = await ourResponse.json();
+    let responseData = await ourResponse.json();
+    if (ourResponse.ok) {      
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
         from: to,
@@ -384,7 +383,7 @@ app.post("/message", async function (request, response) {
       }
       response.status(201).json({ msg: "Created Successfully" });
     } else {
-      response.status(401).json({ msg: "Something Unexpected" });
+      response.status(401).json({ msg: "Something Unexpected", error: responseData.message });
     }
   } catch (error) {
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
