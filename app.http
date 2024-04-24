@@ -66,7 +66,7 @@ Content-Type: application/json
 #########
 
 POST http://localhost:3005/message
-Content-Type: application/json
+Content-Type: application/json`
 
 {
   "messaging_product": "whatsapp",
@@ -77,4 +77,53 @@ Content-Type: application/json
     "message_id": "wamid.HBgMOTE4MDk2MjU1NzU5FQIAERgSODIxQTcyQ0M1OTMxM0E4RTUwAA==",
     "emoji": "❤️"
   }
+}
+
+
+#########
+
+POST http://localhost:3005/webhook
+Content-Type: application/json
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "918096255759"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "<CONTACT_NAME>"
+                                },
+                                "wa_id": "<WA_ID>"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "918096255759",
+                                "id": "wamid.id",
+                                "timestamp": "<TIMESTAMP>",
+                                "type": "image",
+                                "image": {
+                                    "caption": "This is a caption",
+                                    "mime_type": "image/jpeg",
+                                    "sha256": "81d3bd8a8db4868c9520ed47186e8b7c5789e61ff79f7f834be6950b808a90d3",
+                                    "id": "463004666155495"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
 }

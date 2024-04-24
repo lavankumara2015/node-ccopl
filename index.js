@@ -1,6 +1,7 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
+const axios = require("axios");
 const app = express();
 app.use(express.json());
 require("dotenv").config();
@@ -67,11 +68,36 @@ const MediaFunction = async (media_id) => {
       },
     };
     const response = await axios.request(config);
-    const collection = db.collection("media");
+    const collection = await db.collection("media");
     let item = await collection.insertOne({ image: response.data });
-    console.log(item);
+    return item;
   }
 };
+
+async function checkUserAndCreateIfNotExist(value, create = false) {
+  try {
+    let patientsCollection = await db.collection("patients");
+    let patient = await patientsCollection.findOne({
+      patient_phone_number: value.messages[0].from,
+    });
+    if (create) {
+      await patientsCollection.insertOne(
+        addTimestamps({
+          name: value?.contacts[0]?.profile?.name || "",
+          image_url: "",
+          patient_phone_number: value.messages[0].from,
+          message_ids: [value.messages[0].id],
+          coach: "",
+          area: "",
+          stage: "",
+        })
+      );
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 app.post("/webhook", async function (req, res) {
   try {
@@ -81,7 +107,7 @@ app.post("/webhook", async function (req, res) {
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    console.log(value.messages[0].type)
+    console.log(value.messages[0].type);
 
     if (value.statuses !== undefined) {
       console.log("this applied");
@@ -176,7 +202,36 @@ app.post("/webhook", async function (req, res) {
         })
       );
       return res.sendStatus(200);
-    }  else {
+    } else {
+      if (["video", "audio", "image"].includes(value.messages[0].type)) {
+        console.log(value.messages[0]);
+        let mediaData = await MediaFunction(
+          value.messages[0][`${value.messages[0].type}`].id
+        );
+        console.log(mediaData.insertedId);
+        await messagesCollection.insertOne(
+          addTimestamps({
+            ...value.messages[0],
+            message_type: "Incoming",
+            reactions: [],
+            delivery_status: "",
+            media_id_in_collection: mediaData?.insertedId || "",
+          })
+        );
+        console.log(value.messages[0].id, "media");
+        await patientsCollection.findOneAndUpdate(
+          {
+            patient_phone_number: value.messages[0].from,
+          },
+          {
+            $push: {
+              message_ids: value.messages[0].id,
+            },
+          }
+        );
+        return res.send({ msg: "Media Added" });
+      }
+
       await messagesCollection.insertOne(
         addTimestamps({
           ...value.messages[0],
@@ -243,11 +298,13 @@ app.post("/message", async function (request, response) {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "Bearer EABqxsZAVtAi8BOwPlAZApIQv6MjiAtYA19t7o4dZBOjjvgbJsIDDbTggtX6Ay7FEf6ZAAL9vRL1TvtVFWYj4wIrIKEBjtKRZBhnLi8lcpX1rdjgNZClzaN4e6XEZC7ajq3PWdRCZBOviBjTs8sfRsZBfy27SUFRizHCxNexwicVq5DKRE2LVZCZBHtynJIrl2ixDypt8canOjC9ZB0ebEcg1vlAZD",
+            "EABqxsZAVtAi8BO8MgpBl0CgxmV2ekFPfFwpBCiKZBvkFZAvmsaM1dZAUmLO0SV1JfqXgurWDDNcAwzvHGh3n1WsB6CoGgz1hhxlZB0WAUJrGE7L4bxfX5aEzDTECiaZBiupZALdPK7HTVapjJhe5lFDCoz6qgosSlCpPy2jXfFuCsWNeuhyuEQWeWilemRh8VodXew0yRQjLAviGflrzdAZD",
         },
         body: JSON.stringify(formattedObject),
       }
     );
+    let l = await ourResponse.json()
+    console.log(l)
     if (ourResponse.ok) {
       let responseData = await ourResponse.json();
       let coachMessage = addTimestamps({
@@ -276,7 +333,7 @@ app.post("/message", async function (request, response) {
           }
         );
       } else {
-        let num = "+15556105902"
+        let num = "+15556105902";
         delete coachMessage.text;
         await messagesCollection.updateOne(
           {
