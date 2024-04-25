@@ -72,14 +72,14 @@ const MediaFunction = async (media_id) => {
     const collection = await db.collection("media");
     let item;
     if (contentType.startsWith('image')) {
-      item = await collection.insertOne({ image: response.data });
+      item = await collection.insertOne(addTimestamps({ image: response.data }));
     } else if (contentType.startsWith('video')) {
-      item = await collection.insertOne({ video: response.data });
+      item = await collection.insertOne(addTimestamps({ video: response.data }));
     } else if (contentType.startsWith('application/pdf')) {
-      item = await collection.insertOne({ document: response.data });
+      item = await collection.insertOne(addTimestamps({ document: response.data }));
     }else if(contentType.startsWith("audio")){
-      item = await collection.insertOne({ audio: response.data });
-    }
+      item = await collection.insertOne(addTimestamps({ audio: response.data }));
+    } 
     else {
             console.log("error")
     }
