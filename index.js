@@ -22,16 +22,18 @@ let initializeDBAndServer = async (req, res) => {
     console.log(error);
   }
 };
-
 initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+
 
 app.get("/", async function (request, response) {
   response.send(
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
 });
+
 
 app.get("/webhook", function (req, res) {
   res.sendStatus(200);
@@ -205,11 +207,13 @@ app.post("/webhook", async function (req, res) {
       return res.sendStatus(200);
     } else {
       if (["video", "audio", "image" , "document"].includes(value.messages[0].type)) {
-        //console.log(value.messages[0]);
+        // console.log(value.messages[0]);
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
-        //console.log(mediaData.insertedId);
+       console.log(mediaData?.insertedId)
+        //  console.log(value.messages[0][`${value.messages[0].type}`].id);
+       
         await messagesCollection.insertOne(
           addTimestamps({
             ...value.messages[0],
@@ -219,7 +223,7 @@ app.post("/webhook", async function (req, res) {
             media_id_in_collection: mediaData?.insertedId || "",
           })
         );
-        //console.log(value.messages[0].id, "media");
+        console.log(value.messages[0].id, "media");
         await patientsCollection.findOneAndUpdate(
           {
             patient_phone_number: value.messages[0].from,
@@ -241,7 +245,7 @@ app.post("/webhook", async function (req, res) {
           delivery_status: "",
         })
       );
-      //console.log(value.messages[0].id, "jjjj");
+      console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: value.messages[0].from,
@@ -258,10 +262,6 @@ app.post("/webhook", async function (req, res) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
   }
 });
-
-
-
-
 
 
 
@@ -298,7 +298,7 @@ app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
 
-    console.log(request.body , "lavannn");
+    // console.log(request.body , "lavannn");
 
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
@@ -457,6 +457,20 @@ app.get("/messageData", async (req, res) => {
     //console.log(error.message);
   }
 });
+
+
+app.get("/mediaData",async (req,res)=>{
+  try {
+    const collection = await db.collection("media");
+    let data = await collection.find({}, { media: 1 });
+    data = await data.toArray();
+    res.send({ data: data });
+  }catch(error){
+    res.status(400).json({msg:"Something went wrong",status:400});
+  }
+})
+
+
 
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
