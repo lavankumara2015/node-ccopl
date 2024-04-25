@@ -77,7 +77,10 @@ const MediaFunction = async (media_id) => {
       item = await collection.insertOne({ video: response.data });
     } else if (contentType.startsWith('application/pdf')) {
       item = await collection.insertOne({ document: response.data });
-    } else {
+    }else if(contentType.startsWith("audio")){
+      item = await collection.insertOne({ audio: response.data });
+    }
+    else {
             console.log("error")
     }
 
