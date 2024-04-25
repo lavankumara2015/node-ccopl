@@ -51,7 +51,7 @@ const MediaFunction = async (media_id) => {
       headers: {
         "Content-Type": "application/json",
         authorization:
-          "Bearer EABqxsZAVtAi8BOyDK2yIKgc03Xqh3NwlO5ccV7nNii8bWgrNeZCbZAaGE6AfFZByWTSr7ZB2XJwNVqBypekU8MOgyMWqVAtjZC5rvxXqmSeKPH0j4jjY32lc3aJSvdt4kyWryRROhjEcEjf0dgh49ZCEnPW1fJ4ASDANZBSA0Bkdn1Wn5NZCF09WLeB4tGGCgJ0Sq6gJZCt54TYJ92R9z145YZD",
+          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
       },
     }
   );
@@ -65,7 +65,7 @@ const MediaFunction = async (media_id) => {
       responseType: "arraybuffer",
       headers: {
         Authorization:
-          "Bearer EABqxsZAVtAi8BOzBJzTMZAPOb0rkxlDFjyrSurIgbCJT5kxFG0tsJoXOJPbw0zDgATWRVUurO9OKeX25LRT8gMHZBnhUvhxMXChFLO4SbvBhcksdI4FZCUv2WEBAND1laR2NFSJ3TswCENAfgzhIoj9kNyP0d3ZCizYVrICJK3bscGTBAi53XhRSuRWiSuGGsdxIOdi012fAPLJrZALcUZD",
+          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
       },
     };
     const response = await axios.request(config);
@@ -311,7 +311,7 @@ app.post("/message", async function (request, response) {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "Bearer EABqxsZAVtAi8BO8MgpBl0CgxmV2ekFPfFwpBCiKZBvkFZAvmsaM1dZAUmLO0SV1JfqXgurWDDNcAwzvHGh3n1WsB6CoGgz1hhxlZB0WAUJrGE7L4bxfX5aEzDTECiaZBiupZALdPK7HTVapjJhe5lFDCoz6qgosSlCpPy2jXfFuCsWNeuhyuEQWeWilemRh8VodXew0yRQjLAviGflrzdAZD",
+            "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
         },
         body: JSON.stringify(formattedObject),
       }
