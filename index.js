@@ -43,54 +43,92 @@ const addTimestamps = (document) => {
 };
 
 const MediaFunction = async (media_id, message_id) => {
-  const ourResponse = await fetch(
-    `https://graph.facebook.com/v19.0/${media_id}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization:
-          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
-      },
-    }
-  );
-  const ourData = await ourResponse.json();
-  if (ourData.url !== undefined) {
-    let config = {
-      method: "get",
-      maxBodyLength: Infinity,
-      url: `${ourData.url}`,
-      responseType: "arraybuffer",
-      headers: {
-        Authorization:
-          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
-      },
-    };
-    const response = await axios.request(config);
-    let contentType = response.headers['content-type'];
-    
-    let mediaField = null;
+  try {
+    const ourResponse = await fetch(
+      `https://graph.facebook.com/v19.0/${media_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+        },
+      }
+    );
+    const ourData = await ourResponse.json();
+    console.log("Media API Response:", ourData); // Log the response data
+
+    let contentType = ourResponse.headers.get("content-type");
+    const collection = await db.collection("messages");
+    let item;
     if (contentType.startsWith('image')) {
-      mediaField = { image: response.data };
+      item = { image: await ourResponse.arrayBuffer() };
     } else if (contentType.startsWith('video')) {
-      mediaField = { video: response.data };
+      item = { video: await ourResponse.arrayBuffer() };
     } else if (contentType.startsWith('application/pdf')) {
-      mediaField = { document: response.data };
+      item = { document: await ourResponse.arrayBuffer() };
     } else if (contentType.startsWith("audio")) {
-      mediaField = { audio: response.data };
+      item = { audio: await ourResponse.arrayBuffer() };
     } else {
-      console.log("error")
+      console.log("Unsupported media type");
+      return;
     }
 
-    if (mediaField) {
-      // Update the message document with the media data
-      await db.collection("messages").updateOne(
-        { id: message_id },
-        { $set: mediaField }
-      );
-    }
+    // Store the media data in the message document using the message ID as the key
+    await collection.updateOne(
+      { id: message_id },
+      { $set: item },
+      { upsert: true } // Create the document if it doesn't exist
+    );
+  } catch (error) {
+    console.error("Error in MediaFunction:", error);
   }
 };
+
+app.post("/webhook", async function (req, res) {
+  try {
+    let patientsCollection = await db.collection("patients");
+    let messagesCollection = await db.collection("messages");
+    const { entry } = req.body;
+    const { changes } = entry[0];
+    const { value } = changes[0];
+
+    if (value.statuses !== undefined) {
+      return res.status(200).json({ msg: "Not need status" });
+    }
+
+    let patient = await patientsCollection.findOne({
+      patient_phone_number: value.messages[0].from,
+    });
+
+    if (value.messages[0].type === "reaction") {
+      let message = await messagesCollection.findOne({
+        id: value.messages[0].reaction.message_id,
+      });
+      if (!patient) {
+        // Insert patient
+      } else if (message) {
+        // Update reaction
+      }
+      return res.send({ msg: "Reaction Updated" });
+    } else if (!patient) {
+      // Insert patient and message
+    } else {
+      if (["video", "audio", "image", "document"].includes(value.messages[0].type)) {
+        await MediaFunction(
+          value.messages[0][`${value.messages[0].type}`].id,
+          value.messages[0].id
+        );
+        // Insert message with media ID
+      } else {
+        // Insert message without media
+      }
+    }
+    res.send({ msg: "Reaction Updated" });
+  } catch (error) {
+    res.status(400).json({ msg: "Something Went Wrong", error: error.message });
+  }
+});
 
 
 async function checkUserAndCreateIfNotExist(value, create = false) {
