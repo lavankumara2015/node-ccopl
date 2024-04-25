@@ -68,8 +68,19 @@ const MediaFunction = async (media_id) => {
       },
     };
     const response = await axios.request(config);
+    let contentType = response.headers['content-type'];
     const collection = await db.collection("media");
-    let item = await collection.insertOne({ image: response.data });
+    let item;
+    if (contentType.startsWith('image')) {
+      item = await collection.insertOne({ image: response.data });
+    } else if (contentType.startsWith('video')) {
+      item = await collection.insertOne({ video: response.data });
+    } else if (contentType.startsWith('application/pdf')) {
+      item = await collection.insertOne({ document: response.data });
+    } else {
+            console.log("error")
+    }
+
     return item;
   }
 };
