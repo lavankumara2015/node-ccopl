@@ -42,46 +42,48 @@ const addTimestamps = (document) => {
   return document;
 };
 
-const MediaFunction = async (media_id, message_id) => {
-  try {
-    const ourResponse = await fetch(
-      `https://graph.facebook.com/v19.0/${media_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
-        },
-      }
-    );
-    const ourData = await ourResponse.json();
-    console.log("Media API Response:", ourData); // Log the response data
-
-    let contentType = ourResponse.headers.get("content-type");
+const MediaFunction = async (media_id) => {
+  const ourResponse = await fetch(
+    `https://graph.facebook.com/v19.0/${media_id}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        authorization:
+          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+      },
+    }
+  );
+  const ourData = await ourResponse.json();
+  //console.log(ourData.url);
+  if (ourData.url !== undefined) {
+    let config = {
+      method: "get",
+      maxBodyLength: Infinity,
+      url: `${ourData.url}`,
+      responseType: "arraybuffer",
+      headers: {
+        Authorization:
+          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+      },
+    };
+    const response = await axios.request(config);
+    let contentType = response.headers['content-type'];
     const collection = await db.collection("messages");
     let item;
     if (contentType.startsWith('image')) {
-      item = { image: await ourResponse.arrayBuffer() };
+      item = await collection.insertOne({ image: response.data });
     } else if (contentType.startsWith('video')) {
-      item = { video: await ourResponse.arrayBuffer() };
+      item = await collection.insertOne({ video: response.data });
     } else if (contentType.startsWith('application/pdf')) {
-      item = { document: await ourResponse.arrayBuffer() };
-    } else if (contentType.startsWith("audio")) {
-      item = { audio: await ourResponse.arrayBuffer() };
-    } else {
-      console.log("Unsupported media type");
-      return;
+      item = await collection.insertOne({ document: response.data });
+    }else if(contentType.startsWith("audio")){
+      item = await collection.insertOne({ audio: response.data });
+    } 
+    else {
+      console.log("error")
     }
-
-    // Store the media data in the message document using the message ID as the key
-    await collection.updateOne(
-      { id: message_id },
-      { $set: item },
-      { upsert: true } // Create the document if it doesn't exist
-    );
-  } catch (error) {
-    console.error("Error in MediaFunction:", error);
+    return item;
   }
 };
 
