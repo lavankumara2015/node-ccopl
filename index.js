@@ -3,6 +3,8 @@ const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const app = express();
+const cors = require("cors");
+app.use(cors())
 app.use(express.json());
 require("dotenv").config();
 const PORT = process.env.PORT || 3007;
@@ -36,9 +38,8 @@ app.get("/webhook", function (req, res) {
 });
 
 const addTimestamps = (document) => {
-  const now = new Date();
-  document.created_at = now;
-  document.updated_at = null;
+  const nowInSeconds = Math.floor(Date.now() / 1000); 
+  document.timestamp = nowInSeconds.toString(); 
   return document;
 };
 
@@ -55,7 +56,7 @@ const MediaFunction = async (media_id) => {
     }
   );
   const ourData = await ourResponse.json();
-  console.log(ourData.url);
+  //console.log(ourData.url);
   if (ourData.url !== undefined) {
     let config = {
       method: "get",
@@ -101,16 +102,16 @@ async function checkUserAndCreateIfNotExist(value, create = false) {
 
 app.post("/webhook", async function (req, res) {
   try {
-    console.log(JSON.stringify(req.body));
+    //console.log(JSON.stringify(req.body));
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     const { entry } = req.body;
     const { changes } = entry[0];
     const { value } = changes[0];
-    console.log(value.messages[0].type);
+    //console.log(value.messages[0].type);
 
     if (value.statuses !== undefined) {
-      console.log("this applied");
+      //console.log("this applied");
       return res.status(200).json({ msg: "Not need status" });
     }
     let patient = await patientsCollection.findOne({
@@ -203,12 +204,12 @@ app.post("/webhook", async function (req, res) {
       );
       return res.sendStatus(200);
     } else {
-      if (["video", "audio", "image"].includes(value.messages[0].type)) {
-        console.log(value.messages[0]);
+      if (["video", "audio", "image" , "document"].includes(value.messages[0].type)) {
+        //console.log(value.messages[0]);
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
-        console.log(mediaData.insertedId);
+        //console.log(mediaData.insertedId);
         await messagesCollection.insertOne(
           addTimestamps({
             ...value.messages[0],
@@ -218,7 +219,7 @@ app.post("/webhook", async function (req, res) {
             media_id_in_collection: mediaData?.insertedId || "",
           })
         );
-        console.log(value.messages[0].id, "media");
+        //console.log(value.messages[0].id, "media");
         await patientsCollection.findOneAndUpdate(
           {
             patient_phone_number: value.messages[0].from,
@@ -240,7 +241,7 @@ app.post("/webhook", async function (req, res) {
           delivery_status: "",
         })
       );
-      console.log(value.messages[0].id, "jjjj");
+      //console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: value.messages[0].from,
@@ -257,6 +258,12 @@ app.post("/webhook", async function (req, res) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
   }
 });
+
+
+
+
+
+
 
 function getMessageObject(data, to, type = "text") {
   if (type === "text") {
@@ -285,12 +292,17 @@ function getMessageObject(data, to, type = "text") {
   }
 }
 
+
+
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
-    console.log(type, data)
+
+    console.log(request.body , "lavannn");
+
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
+
     let formattedObject = getMessageObject(data, to, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
@@ -344,7 +356,7 @@ app.post("/message", async function (request, response) {
                 updated_at: new Date(),
                 reactions: {
                   $cond: {
-                    if: { $in: [num, "$reactions.user"] }, // Check if user exists in reactions array
+                    if: { $in: [num, "$reactions.user"] }, 
                     then: {
                       $map: {
                         input: "$reactions",
@@ -353,11 +365,11 @@ app.post("/message", async function (request, response) {
                           $cond: {
                             if: {
                               $eq: ["$$reaction.user", num],
-                            }, // Find the reaction object for the user
+                            }, 
                             then: {
                               user: num,
                               emoji: data.emoji,
-                            }, // Update emoji if user exists
+                            }, 
                             else: "$$reaction",
                           },
                         },
@@ -373,7 +385,7 @@ app.post("/message", async function (request, response) {
                           },
                         ],
                       ],
-                    }, // Add new reaction if user doesn't exist
+                    }, 
                   },
                 },
               },
@@ -390,8 +402,9 @@ app.post("/message", async function (request, response) {
   }
 });
 
+
 app.post("/coach", async (req, res) => {
-  console.log("Process started");
+  //console.log("Process started");
   try {
     const collection = await db.collection("coachs");
     const { name, mobile, password } = req.body;
@@ -422,12 +435,28 @@ app.get("/users", async (req, res) => {
     const collection = await db.collection("patients");
     let data = await collection.find({}, { messages: 1 });
     data = await data.toArray();
-    console.log(data);
+    //console.log(data);
     res.send({ data: data });
   } catch (error) {
     res.status(201).json({ msg: "Something Went Wrong", status: 400 });
-    console.log(error.message);
+    //console.log(error.message);
   }
 });
+
+
+
+
+app.get("/messageData", async (req, res) => {
+  try {
+    const collection = await db.collection("messages");
+    let data = await collection.find({}, { messages: 1 });
+    data = await data.toArray();
+    res.send({ data: data });
+  } catch (error) {
+    res.status(400).json({ msg: "Something Went Wrong", status: 400 });
+    //console.log(error.message);
+  }
+});
+
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
