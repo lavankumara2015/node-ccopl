@@ -22,16 +22,18 @@ let initializeDBAndServer = async (req, res) => {
     console.log(error);
   }
 };
-
 initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+
 
 app.get("/", async function (request, response) {
   response.send(
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
 });
+
 
 app.get("/webhook", function (req, res) {
   res.sendStatus(200);
@@ -59,7 +61,7 @@ const MediaFunction = async (media_id) => {
   //console.log(ourData.url);
   if (ourData.url !== undefined) {
     let config = {
-      method: "get",
+      method: "GET",
       maxBodyLength: Infinity,
       url: `${ourData.url}`,
       responseType: "arraybuffer",
@@ -261,10 +263,6 @@ app.post("/webhook", async function (req, res) {
 
 
 
-
-
-
-
 function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
@@ -298,7 +296,7 @@ app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
 
-    console.log(request.body , "lavannn");
+    // console.log(request.body , "lavannn");
 
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
