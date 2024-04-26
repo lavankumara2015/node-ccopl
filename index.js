@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const axios = require("axios");
 const app = express();
 const cors = require("cors");
-app.use(cors());
+app.use(cors())
 app.use(express.json());
 require("dotenv").config();
 const PORT = process.env.PORT || 3007;
@@ -26,19 +26,22 @@ initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+
+
 app.get("/", async function (request, response) {
   response.send(
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
 });
 
+
 app.get("/webhook", function (req, res) {
   res.sendStatus(200);
 });
 
 const addTimestamps = (document) => {
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  document.timestamp = nowInSeconds.toString();
+  const nowInSeconds = Math.floor(Date.now() / 1000); 
+  document.timestamp = nowInSeconds.toString(); 
   return document;
 };
 
@@ -50,7 +53,7 @@ const MediaFunction = async (media_id) => {
       headers: {
         "Content-Type": "application/json",
         authorization:
-          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+          "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
       },
     }
   );
@@ -64,12 +67,30 @@ const MediaFunction = async (media_id) => {
       responseType: "arraybuffer",
       headers: {
         Authorization:
-          "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+          "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
       },
     };
     const response = await axios.request(config);
+<<<<<<< HEAD
     const collection = await db.collection("media");
     let item = response.data
+=======
+    let contentType = response.headers['content-type'];
+    const collection = await db.collection("messages");
+    let item;
+    if (contentType.startsWith('image')) {
+      item = await collection.insertOne({ image: response.data });
+    } else if (contentType.startsWith('video')) {
+      item = await collection.insertOne({ video: response.data });
+    } else if (contentType.startsWith('application/pdf')) {
+      item = await collection.insertOne({ document: response.data });
+    }else if(contentType.startsWith("audio")){
+      item = await collection.insertOne({ audio: response.data });
+    } 
+    else {
+      console.log("error")
+    }
+>>>>>>> 80ad46106f78fb85462827c377042393586f16a6
     return item;
   }
 };
@@ -143,7 +164,7 @@ app.post("/webhook", async function (req, res) {
                 updated_at: new Date(),
                 reactions: {
                   $cond: {
-                    if: { $in: [value.messages[0].from, "$reactions.user"] }, // Check if user exists in reactions array
+                    if: { $in: [value.messages[0].from, "$reactions.user"] }, 
                     then: {
                       $map: {
                         input: "$reactions",
@@ -152,11 +173,11 @@ app.post("/webhook", async function (req, res) {
                           $cond: {
                             if: {
                               $eq: ["$$reaction.user", value.messages[0].from],
-                            }, // Find the reaction object for the user
+                            }, 
                             then: {
                               user: value.messages[0].from,
                               emoji: value.messages[0].reaction.emoji,
-                            }, // Update emoji if user exists
+                            }, 
                             else: "$$reaction",
                           },
                         },
@@ -172,7 +193,7 @@ app.post("/webhook", async function (req, res) {
                           },
                         ],
                       ],
-                    }, // Add new reaction if user doesn't exist
+                    }, 
                   },
                 },
               },
@@ -203,16 +224,18 @@ app.post("/webhook", async function (req, res) {
       );
       return res.sendStatus(200);
     } else {
-      if (
-        ["video", "audio", "image", "document"].includes(value.messages[0].type)
-      ) {
+      if (["video", "audio", "image" , "document"].includes(value.messages[0].type)) {
         // console.log(value.messages[0]);
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
+<<<<<<< HEAD
         // console.log(mediaData?.insertedId);
+=======
+       console.log(mediaData?.insertedId)
+>>>>>>> 80ad46106f78fb85462827c377042393586f16a6
         //  console.log(value.messages[0][`${value.messages[0].type}`].id);
-
+       
         await messagesCollection.insertOne(
           addTimestamps({
             ...value.messages[0],
@@ -262,6 +285,8 @@ app.post("/webhook", async function (req, res) {
   }
 });
 
+
+
 function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
@@ -289,6 +314,8 @@ function getMessageObject(data, to, type = "text") {
   }
 }
 
+
+
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
@@ -306,13 +333,13 @@ app.post("/message", async function (request, response) {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "Bearer EABqxsZAVtAi8BO0zt12cnhtxAV3fWK4VrQabpAKnTsM2A9UeZBh2vBSgamE4utQkxonPegpUZBkmxGN7cZBPE2bSEEel8aStFtloui6yh1EKJ0q5QEZAsU8C8Sdfkn98h4R8Cj6URAyCXtCYPgZC1iufHcM45IjgqNkKPlgPkAnhQQZA65pKZBYKxrzZB1ed6o7jU1MARY3HZBVZCP4borSA3kZD",
+            "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
         },
         body: JSON.stringify(formattedObject),
       }
     );
     let responseData = await ourResponse.json();
-    if (ourResponse.ok) {
+    if (ourResponse.ok) {      
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
         from: to,
@@ -351,7 +378,7 @@ app.post("/message", async function (request, response) {
                 updated_at: new Date(),
                 reactions: {
                   $cond: {
-                    if: { $in: [num, "$reactions.user"] },
+                    if: { $in: [num, "$reactions.user"] }, 
                     then: {
                       $map: {
                         input: "$reactions",
@@ -360,11 +387,11 @@ app.post("/message", async function (request, response) {
                           $cond: {
                             if: {
                               $eq: ["$$reaction.user", num],
-                            },
+                            }, 
                             then: {
                               user: num,
                               emoji: data.emoji,
-                            },
+                            }, 
                             else: "$$reaction",
                           },
                         },
@@ -380,7 +407,7 @@ app.post("/message", async function (request, response) {
                           },
                         ],
                       ],
-                    },
+                    }, 
                   },
                 },
               },
@@ -390,14 +417,13 @@ app.post("/message", async function (request, response) {
       }
       response.status(201).json({ msg: "Created Successfully" });
     } else {
-      response
-        .status(401)
-        .json({ msg: "Something Unexpected", error: responseData.message });
+      response.status(401).json({ msg: "Something Unexpected", error: responseData.message });
     }
   } catch (error) {
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
   }
 });
+
 
 app.post("/coach", async (req, res) => {
   //console.log("Process started");
@@ -439,6 +465,9 @@ app.get("/users", async (req, res) => {
   }
 });
 
+
+
+
 app.get("/messageData", async (req, res) => {
   try {
     const collection = await db.collection("messages");
@@ -447,18 +476,23 @@ app.get("/messageData", async (req, res) => {
     res.send({ data: data });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", status: 400 });
+    //console.log(error.message);
   }
 });
 
-app.get("/mediaData", async (req, res) => {
+
+app.get("/mediaData",async (req,res)=>{
   try {
     const collection = await db.collection("media");
     let data = await collection.find({}, { media: 1 });
     data = await data.toArray();
     res.send({ data: data });
-  } catch (error) {
-    res.status(400).json({ msg: "Something went wrong", status: 400 });
+  }catch(error){
+    res.status(400).json({msg:"Something went wrong",status:400});
   }
-});
+})
+
+
+
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
