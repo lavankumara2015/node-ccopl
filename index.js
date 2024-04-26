@@ -69,7 +69,7 @@ const MediaFunction = async (media_id) => {
     };
     const response = await axios.request(config);
     const collection = await db.collection("media");
-    let item = await collection.insertOne({ image: response.data });
+    let item = response.data
     return item;
   }
 };
@@ -210,7 +210,7 @@ app.post("/webhook", async function (req, res) {
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
-        console.log(mediaData?.insertedId);
+        // console.log(mediaData?.insertedId);
         //  console.log(value.messages[0][`${value.messages[0].type}`].id);
 
         await messagesCollection.insertOne(
@@ -219,7 +219,7 @@ app.post("/webhook", async function (req, res) {
             message_type: "Incoming",
             reactions: [],
             delivery_status: "",
-            media_id_in_collection: mediaData?.insertedId || "",
+            media_data: mediaData,
           })
         );
         console.log(value.messages[0].id, "media");
