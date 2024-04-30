@@ -2,6 +2,7 @@ const express = require("express");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const fs = require("fs");
 const app = express();
 const cors = require("cors");
 app.use(cors());
@@ -49,8 +50,7 @@ const MediaFunction = async (media_id) => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        authorization:
-          `Bearer ${process.env.MADE_WITH} `,
+        authorization: `Bearer ${process.env.MADE_WITH} `,
       },
     }
   );
@@ -63,9 +63,8 @@ const MediaFunction = async (media_id) => {
       url: `${ourData.url}`,
       responseType: "arraybuffer",
       headers: {
-        Authorization:
-        `Bearer ${process.env.MADE_WITH} `,
-          },
+        Authorization: `Bearer ${process.env.MADE_WITH} `,
+      },
     };
     const response = await axios.request(config);
     let contentType = response.headers["content-type"];
@@ -142,6 +141,7 @@ app.post("/webhook", async function (req, res) {
             coach: "",
             area: "",
             stage: "",
+            patient_phone_number_id: value.metadata.phone_number_id
           })
         );
       } else if (message) {
@@ -204,6 +204,7 @@ app.post("/webhook", async function (req, res) {
           coach: "",
           area: "",
           stage: "",
+          patient_phone_number_id: value.metadata.phone_number_id
         })
       );
       await messagesCollection.insertOne(
@@ -274,7 +275,7 @@ app.post("/webhook", async function (req, res) {
   }
 });
 
-function getMessageObject(data, to, type = "text") {
+async function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
       messaging_product: "whatsapp",
@@ -298,14 +299,29 @@ function getMessageObject(data, to, type = "text") {
         emoji: data.emoji,
       },
     };
+  } else if (type === "image") {
+    let api = ""
+    return {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: to,
+      type: type,
+      image: {
+        link: data.link,
+      },
+    };
   }
 }
 
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
+
+    console.log(request.body, "lavannn");
+
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
+
     let formattedObject = getMessageObject(data, to, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
@@ -313,13 +329,13 @@ app.post("/message", async function (request, response) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization:
-          `Bearer ${process.env.MADE_WITH} `,
-         },
-        body: JSON.stringify(formattedObject),
+          Authorization: `Bearer ${process.env.MADE_WITH} `,
+        },
+        body: JSON.stringify(await formattedObject),
       }
     );
     let responseData = await ourResponse.json();
+    console.log(responseData);
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
@@ -471,3 +487,15 @@ app.get("/mediaData", async (req, res) => {
 });
 
 // await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
+
+setTimeout(() => {
+  let a = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: "{{Recipient-Phone-Number}}",
+    type: "image",
+    image: {
+      link: "http(s)://image-url",
+    },
+  };
+}, 5000);
