@@ -50,7 +50,7 @@ const MediaFunction = async (media_id) => {
       headers: {
         "Content-Type": "application/json",
         authorization:
-          "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
+          `Bearer ${process.env.MADE_WITH} `,
       },
     }
   );
@@ -64,8 +64,8 @@ const MediaFunction = async (media_id) => {
       responseType: "arraybuffer",
       headers: {
         Authorization:
-          "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
-      },
+        `Bearer ${process.env.MADE_WITH} `,
+          },
     };
     const response = await axios.request(config);
     let contentType = response.headers["content-type"];
@@ -314,8 +314,8 @@ app.post("/message", async function (request, response) {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "Bearer EABqxsZAVtAi8BOZBMGEsiohnaijzS57i5EeILZAJfRMcWiZAcDcVHqOJKx7NiUxjC3X1BbWTblq3arre7hqA11dENXbODiVXLy5FIfQthfUZBQhEb6XrdqsK5HZBGw64HTVgusFAV9H9j5vaZA6LZA2ZCpGuIAXnGviFLjZBdpCidUZAFQHVlgfBRUWZATH4bnsU7gbgghoDJzIxF3R4yxPRjXET",
-        },
+          `Bearer ${process.env.MADE_WITH} `,
+         },
         body: JSON.stringify(formattedObject),
       }
     );
