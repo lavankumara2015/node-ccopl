@@ -116,7 +116,7 @@ app.post("/webhook", async function (req, res) {
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     const { entry } = req.body;
-    const { changes } = entry[0];
+    const { changes, id } = entry[0];
     const { value } = changes[0];
     //console.log(value.messages[0].type);
 
@@ -141,7 +141,7 @@ app.post("/webhook", async function (req, res) {
             coach: "",
             area: "",
             stage: "",
-            patient_phone_number_id: value.metadata.phone_number_id
+            patient_phone_number_id: id
           })
         );
       } else if (message) {
@@ -204,7 +204,7 @@ app.post("/webhook", async function (req, res) {
           coach: "",
           area: "",
           stage: "",
-          patient_phone_number_id: value.metadata.phone_number_id
+          patient_phone_number_id: id
         })
       );
       await messagesCollection.insertOne(
@@ -300,7 +300,7 @@ async function getMessageObject(data, to, type = "text") {
       },
     };
   } else if (type === "image") {
-    let api = ""
+    let api = "https://graph.facebook.com/v19.0/232950459911097/messages";
     return {
       messaging_product: "whatsapp",
       recipient_type: "individual",
