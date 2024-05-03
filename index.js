@@ -333,7 +333,7 @@ async function getMessageObject(data, to, type = "text") {
       maxBodyLength: Infinity,
       url: "https://graph.facebook.com/v19.0/232950459911097/media",
       headers: {
-        Authorization: `Bearer EABqxsZAVtAi8BO5NGN3eqiJVzY3iv5Ywjkt82T6KMfQhZB1yMHfGsQy8XX45UghCu8rHCYb5YxlZCvoYMA7AgHYZCF1ZAzxhIT0ocI9i2m8SZB5MmW1sRj0yiMoIYl6WdCLd2iaGYzS5LMegZAOtEByCFToSEZCbmTZCWvhQjcFXvCXklY1CIdETRZB0QkxIEwXb6rDZBuQBDTO4yp5ftOURpJI`,
+        Authorization: `Bearer ${process.env.MADE_WITH}`,
         // "Content-Type": "image/jpeg",
         ...formData.getHeaders(),
       },
