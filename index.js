@@ -1,4 +1,5 @@
 const express = require("express");
+const FormData = require("form-data");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
 const axios = require("axios");
@@ -78,12 +79,31 @@ const MediaFunction = async (media_id) => {
       item = { document: response.data };
     } else if (contentType.startsWith("audio")) {
       item = { audio: response.data };
+    } else if (contentType.startsWith("sticker")) {
+      item = { sticker: response.data };
     } else {
       console.log("error");
     }
     return item;
   }
 };
+
+async function uploadImageToWhatsAppMediaAPI() {
+  let imagePath = "./pictures/img1.png";
+  try {
+    const imageData = fs.readFileSync(IMAGE_PATH, { encoding: "base64" });
+    const response = await axios.post(API_URL, imageData, {
+      headers: {
+        Authorization: `Bearer ${AUTH_TOKEN}`,
+        "Content-Type": MEDIA_TYPE,
+      },
+    });
+    console.log("Upload successful!");
+    console.log("Media ID:", response.data.mediaId);
+  } catch (error) {
+    console.error("Upload failed:", error.response.data);
+  }
+}
 
 async function checkUserAndCreateIfNotExist(value, create = false) {
   try {
@@ -141,7 +161,7 @@ app.post("/webhook", async function (req, res) {
             coach: "",
             area: "",
             stage: "",
-            patient_phone_number_id: id
+            patient_phone_number_id: id,
           })
         );
       } else if (message) {
@@ -204,7 +224,7 @@ app.post("/webhook", async function (req, res) {
           coach: "",
           area: "",
           stage: "",
-          patient_phone_number_id: id
+          patient_phone_number_id: id,
         })
       );
       await messagesCollection.insertOne(
@@ -217,7 +237,9 @@ app.post("/webhook", async function (req, res) {
       return res.sendStatus(200);
     } else {
       if (
-        ["video", "audio", "image", "document"].includes(value.messages[0].type)
+        ["video", "audio", "image", "document", "sticker"].includes(
+          value.messages[0].type
+        )
       ) {
         // console.log(value.messages[0]);
         let mediaData = await MediaFunction(
@@ -299,30 +321,53 @@ async function getMessageObject(data, to, type = "text") {
         emoji: data.emoji,
       },
     };
-  } else if (type === "image") {
-    let api = "https://graph.facebook.com/v19.0/232950459911097/messages";
-    return {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: type,
-      image: {
-        link: data.link,
+  } else if (
+    ["video", "audio", "image", "document", "sticker"].includes(type)
+  ) {
+    let formData = new FormData();
+    formData.append("messaging_product", "whatsapp");
+    formData.append("file", fs.createReadStream(data.path));
+
+    let mediaData = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "https://graph.facebook.com/v19.0/232950459911097/media",
+      headers: {
+        Authorization: `Bearer EABqxsZAVtAi8BO5NGN3eqiJVzY3iv5Ywjkt82T6KMfQhZB1yMHfGsQy8XX45UghCu8rHCYb5YxlZCvoYMA7AgHYZCF1ZAzxhIT0ocI9i2m8SZB5MmW1sRj0yiMoIYl6WdCLd2iaGYzS5LMegZAOtEByCFToSEZCbmTZCWvhQjcFXvCXklY1CIdETRZB0QkxIEwXb6rDZBuQBDTO4yp5ftOURpJI`,
+        // "Content-Type": "image/jpeg",
+        ...formData.getHeaders(),
       },
+      data: formData,
     };
+
+    try {
+      let response = await axios.request(mediaData);
+      const mediaId = response.data.id;
+      console.log("media Id", mediaId);
+      return {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: type,
+        [`${type}`]: {
+          id: mediaId,
+        },
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 }
 
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
-
-    console.log(request.body, "lavannn");
-
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
 
-    let formattedObject = getMessageObject(data, to, type);
+    let formattedObject = await getMessageObject(data, to, type);
+    if (["image"].includes("image")) {
+    }
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -331,7 +376,7 @@ app.post("/message", async function (request, response) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.MADE_WITH} `,
         },
-        body: JSON.stringify(await formattedObject),
+        body: JSON.stringify(formattedObject),
       }
     );
     let responseData = await ourResponse.json();
@@ -351,6 +396,11 @@ app.post("/message", async function (request, response) {
         delivery_status: "",
       });
       if (type !== "reaction") {
+        if (["video", "audio", "image", "document", "sticker"].includes(type)) {
+          let bufferFormat = await MediaFunction(formattedObject[`${type}`].id);
+          delete coachMessage.text;
+          coachMessage.media_data = bufferFormat;
+        }
         await messagesCollection.insertOne(coachMessage);
         await patientsCollection.findOneAndUpdate(
           {
@@ -424,7 +474,6 @@ app.post("/message", async function (request, response) {
 });
 
 app.post("/coach", async (req, res) => {
-  //console.log("Process started");
   try {
     const collection = await db.collection("coachs");
     const { name, mobile, password } = req.body;
