@@ -58,7 +58,7 @@ Content-Type: application/json
     "to": "918096255759",
     "type": "text",
     "data": {
-        "text": "Work Don't test"
+        "text": "OOps! something went right"
     }
 }
 

@@ -366,8 +366,6 @@ app.post("/message", async function (request, response) {
     let messagesCollection = await db.collection("messages");
 
     let formattedObject = await getMessageObject(data, to, type);
-    if (["image"].includes("image")) {
-    }
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
