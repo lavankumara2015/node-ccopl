@@ -513,7 +513,7 @@ app.get("/users", async (req, res) => {
 app.get("/messageData", async (req, res) => {
   try {
     const collection = await db.collection("messages");
-    let data = await collection.find({}, { messages: 1 }).limit(10).sort({_id: -1});
+    let data = await collection.find({}, { messages: 1 }).limit(20).sort({_id: -1});
     data = await data.toArray();
     res.send({ data: data });
   } catch (error) {
