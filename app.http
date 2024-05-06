@@ -55,7 +55,7 @@ Content-Type: application/json
 
 {
     "messaging_product": "whatsapp",
-    "to": "918096255759",
+    "to": "917895441429",
     "type": "text",
     "data": {
         "text": "OOps! something went right"
