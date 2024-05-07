@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const FormData = require("form-data");
 const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
@@ -354,7 +355,7 @@ async function getMessageObject(data, to, type = "text") {
         },
       };
     } catch (error) {
-      throw new Error(error);
+      console.log(error);
     }
   }
 }
@@ -513,7 +514,10 @@ app.get("/users", async (req, res) => {
 app.get("/messageData", async (req, res) => {
   try {
     const collection = await db.collection("messages");
-    let data = await collection.find({}, { messages: 1 }).limit(20).sort({_id: -1});
+    let data = await collection
+      .find({}, { messages: 1 })
+      .limit(20)
+      .sort({ _id: -1 });
     data = await data.toArray();
     res.send({ data: data });
   } catch (error) {
@@ -546,3 +550,43 @@ setTimeout(() => {
     },
   };
 }, 5000);
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+});
+
+let baseUrl = "https://node-ccoplnfjedo.onrender.com";
+app.use("/recieve-media", express.static("public"));
+app.post("/recieve-media", upload.single("file"), async (req, res) => {
+  let { to, type } = req.body;
+  let pData = {
+    messaging_product: "whatsapp",
+    to: to,
+    type: type || req.file?.mimetype?.split("/")[0] || "",
+    data: {
+      path: `uploads/${req.file.filename}`,
+    },
+  };
+  console.log(pData);
+  fetch(`${baseUrl}/message`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(pData),
+  })
+    .then((response) => response.json())
+    .then((jsonData) => console.log(jsonData))
+    .catch((error) => console.log(error.message));
+  res.send({ msg: "Added" });
+});
