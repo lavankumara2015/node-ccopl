@@ -25,6 +25,7 @@ let initializeDBAndServer = async (req, res) => {
     console.log(error);
   }
 };
+
 initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -142,7 +143,6 @@ app.post("/webhook", async function (req, res) {
     //console.log(value.messages[0].type);
 
     if (value.statuses !== undefined) {
-      //console.log("this applied");
       return res.status(200).json({ msg: "Not need status" });
     }
     let patient = await patientsCollection.findOne({
@@ -511,14 +511,22 @@ app.get("/users", async (req, res) => {
   }
 });
 
-app.get("/messageData", async (req, res) => {
+app.post("/messageData", async (req, res) => {
   try {
+    const { message_id } = req.body;
+    console.log(message_id);
+    let data;
     const collection = await db.collection("messages");
-    let data = await collection
-      .find({}, { messages: 1 })
-      .limit(20)
-      .sort({ _id: -1 });
-    data = await data.toArray();
+    if (message_id) {
+      data = await collection.findOne({ id: message_id });
+    } else {
+      data = await collection
+        .find({}, { messages: 1 })
+        .limit(20)
+        .sort({ _id: -1 });
+      data = await data.toArray();
+    }
+
     res.send({ data: data });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", status: 400 });
