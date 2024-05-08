@@ -501,11 +501,20 @@ app.post("/patient", async (req, res) => {
 app.get("/users", async (req, res) => {
   try {
     const collection = await db.collection("patients");
+    const messageCollection = await db.collection("messages");
     let data = await collection.find({}, { messages: 1 });
     data = await data.toArray();
+    for (let userData of data) {
+      let lastMessageId = userData.message_ids.at(-1)
+      console.log(lastMessageId, "lastMesageID")
+      let lastMessage = await messageCollection.findOne({id: lastMessageId})
+      userData.lastMessage = lastMessage;      
+    }
+    data = data.sort((each) => each.lastMessage.timestamp)
     //console.log(data);
     res.send({ data: data });
   } catch (error) {
+    console.log(error)
     res.status(201).json({ msg: "Something Went Wrong", status: 400 });
     //console.log(error.message);
   }
@@ -513,17 +522,14 @@ app.get("/users", async (req, res) => {
 
 app.post("/messageData", async (req, res) => {
   try {
-    const { message_id } = req.body;
-    console.log(message_id);
+    const { message_id, user_id } = req.body;
+    console.log(message_id, user_id);
     let data;
     const collection = await db.collection("messages");
     if (message_id) {
       data = await collection.findOne({ id: message_id });
     } else {
-      data = await collection
-        .find({}, { messages: 1 })
-        .limit(20)
-        .sort({ _id: -1 });
+      data = await collection.find({}).limit(20).sort({ _id: 1 });
       data = await data.toArray();
     }
 
