@@ -510,7 +510,7 @@ app.get("/users", async (req, res) => {
       let lastMessage = await messageCollection.findOne({id: lastMessageId})
       userData.lastMessage = lastMessage;      
     }
-    data = data.sort((each) => each.lastMessage.timestamp)
+    data = data.sort((i1, i2) => i2.lastMessage.timestamp-i1.lastMessage.timestamp)
     //console.log(data);
     res.send({ data: data });
   } catch (error) {
