@@ -518,7 +518,7 @@ app.post("/messageData", async (req, res) => {
         { $sort: { _id: -1 } }, // Sort documents by _id in descending order
         { $limit: 40 }, // Limit the result set to the last 10 documents
         { $project: { media_data: 0 } }, // Exclude the "media_data" field
-        { $sort: { _id: 1 } } // Sort the result set by _id in ascending order
+        { $sort: { _id: 1 } }, // Sort the result set by _id in ascending order
       ]);
 
       data = await data.toArray();
