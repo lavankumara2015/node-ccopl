@@ -10,7 +10,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 require("dotenv").config();
-const PORT = process.env.PORT || 3007 ;
+const PORT = process.env.PORT || 3007;
 
 let db;
 
@@ -58,7 +58,7 @@ const MediaFunction = async (media_id) => {
     }
   );
   const ourData = await ourResponse.json();
-  //console.log(ourData.url);
+  console.log(ourData);
   if (ourData.url !== undefined) {
     let config = {
       method: "get",
@@ -86,51 +86,10 @@ const MediaFunction = async (media_id) => {
     } else {
       console.log("error");
     }
+    item.docTypeData = ourData;
     return item;
   }
 };
-
-async function uploadImageToWhatsAppMediaAPI() {
-  let imagePath = "./pictures/img1.png";
-  try {
-    const imageData = fs.readFileSync(IMAGE_PATH, { encoding: "base64" });
-    const response = await axios.post(API_URL, imageData, {
-      headers: {
-        Authorization: `Bearer ${AUTH_TOKEN}`,
-        "Content-Type": MEDIA_TYPE,
-      },
-    });
-    console.log("Upload successful!");
-    console.log("Media ID:", response.data.mediaId);
-  } catch (error) {
-    console.error("Upload failed:", error.response.data);
-  }
-}
-
-async function checkUserAndCreateIfNotExist(value, create = false) {
-  try {
-    let patientsCollection = await db.collection("patients");
-    let patient = await patientsCollection.findOne({
-      patient_phone_number: value.messages[0].from,
-    });
-    if (create) {
-      await patientsCollection.insertOne(
-        addTimestamps({
-          name: value?.contacts[0]?.profile?.name || "",
-          image_url: "",
-          patient_phone_number: value.messages[0].from,
-          message_ids: [value.messages[0].id],
-          coach: "",
-          area: "",
-          stage: "",
-        })
-      );
-    }
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
 
 app.post("/webhook", async function (req, res) {
   try {
@@ -344,16 +303,23 @@ async function getMessageObject(data, to, type = "text") {
     try {
       let response = await axios.request(mediaData);
       const mediaId = response.data.id;
-      console.log("media Id", mediaId);
-      return {
+      console.log("media Id", mediaId, response.data);
+      let obj = {
         messaging_product: "whatsapp",
         recipient_type: "individual",
         to: to,
         type: type,
-        [`${type}`]: {
+        [type]: {
           id: mediaId,
+          filename: "myfile",
+          caption: "",
         },
       };
+      if (type === "audio") {
+        delete obj[`${type}`].caption;
+        delete obj[`${type}`].filename;
+      }
+      return obj;
     } catch (error) {
       console.log(error);
     }
@@ -396,9 +362,11 @@ app.post("/message", async function (request, response) {
       });
       if (type !== "reaction") {
         if (["video", "audio", "image", "document", "sticker"].includes(type)) {
-          let bufferFormat = await MediaFunction(formattedObject[`${type}`].id);
+          let bufferData = await MediaFunction(formattedObject[`${type}`].id);
           delete coachMessage.text;
-          coachMessage.media_data = bufferFormat;
+          coachMessage[`${type}`] = bufferData.docTypeData;
+          delete bufferData.docTypeData;
+          coachMessage["media_data"] = bufferData;
         }
         await messagesCollection.insertOne(coachMessage);
         await patientsCollection.findOneAndUpdate(
@@ -540,19 +508,27 @@ app.post("/messageData", async (req, res) => {
         data = await collection.findOne({ id: message_id });
       }
     } else {
-      data = await collection
-        .find({ from: user_id })
-        .project({ media_data: 0 })
-        .limit(15)
-        .sort({ _id: 1 });
+      // data = await collection
+      //   .find({ from: user_id })
+      //   .project({ media_data: 0 })
+      //   .sort({ _id: -1 })
+      //   .limit(15);
+      data = await collection.aggregate([
+        { $match: { from: user_id } }, // Filter documents by user_id
+        { $sort: { _id: -1 } }, // Sort documents by _id in descending order
+        { $limit: 40 }, // Limit the result set to the last 10 documents
+        { $project: { media_data: 0 } }, // Exclude the "media_data" field
+        { $sort: { _id: 1 } } // Sort the result set by _id in ascending order
+      ]);
+
       data = await data.toArray();
       console.log(data);
     }
 
     res.send({ data: data });
   } catch (error) {
+    console.log(error.message);
     res.status(400).json({ msg: "Something Went Wrong", status: 400 });
-    //console.log(error.message);
   }
 });
 
@@ -620,4 +596,3 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     .catch((error) => console.log(error.message));
   res.send({ msg: "Added" });
 });
-
