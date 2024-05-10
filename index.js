@@ -19,9 +19,6 @@ let initializeDBAndServer = async (req, res) => {
     client = new MongoClient(
       "mongodb+srv://sanjukanki56429:dmX96TLZGz7OYS9A@cluster0.eg2lxgb.mongodb.net/"
     );
-    // client = new MongoClient(
-    //   "mongodb://localhost:27017/"
-    // );
     db = await client.db("test");
     app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
   } catch (error) {
@@ -519,29 +516,34 @@ app.get("/users", async (req, res) => {
     data = data.sort(
       (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
     );
-    //console.log(data);
+
     res.send({ data: data });
   } catch (error) {
     console.log(error);
     res.status(201).json({ msg: "Something Went Wrong", status: 400 });
-    //console.log(error.message);
   }
 });
 
 app.post("/messageData", async (req, res) => {
   try {
-    const { message_id, user_id } = req.body;
+    const { message_id, user_id, is_last = true } = req.body;
     console.log(message_id, user_id);
     let data;
-    const collection = await db
-      .collection("messages");
+    const collection = await db.collection("messages");
     if (message_id) {
-      data = await collection.findOne({ id: message_id });
+      if (is_last) {
+        data = await collection.findOne(
+          { id: message_id },
+          { projection: { media_data: 0 } }
+        );
+      } else {
+        data = await collection.findOne({ id: message_id });
+      }
     } else {
       data = await collection
         .find({ from: user_id })
         .project({ media_data: 0 })
-        .limit(20)
+        .limit(15)
         .sort({ _id: 1 });
       data = await data.toArray();
       console.log(data);
