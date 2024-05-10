@@ -17,7 +17,7 @@ let db;
 let initializeDBAndServer = async (req, res) => {
   try {
     client = new MongoClient(
-      "mongodb+srv://sanjukanki56429:dmX96TLZGz7OYS9A@cluster0.eg2lxgb.mongodb.net/"
+      "mongodb+srv://cionchat:Cionchat%401234@cluster0.xliikxl.mongodb.net/"
     );
     db = await client.db("test");
     app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
