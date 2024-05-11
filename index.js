@@ -521,7 +521,7 @@ app.post("/messageData", async (req, res) => {
         { $match: { from: user_id } }, // Filter documents by user_id
         { $sort: { _id: -1 } }, // Sort documents by _id in descending order
         { $skip: 20 * messageLimit }, // Skip the first 20 documents
-        { $limit: 20 * messageLimit+20 }, // Limit the result set to the next 40 documents
+        { $limit: 20 * messageLimit + 20 }, // Limit the result set to the next 40 documents
         { $project: { media_data: 0 } }, // Exclude the "media_data" field
         { $sort: { _id: 1 } }, // Sort the result set by _id in ascending order
       ]);
