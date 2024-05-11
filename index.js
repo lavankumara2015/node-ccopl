@@ -520,10 +520,10 @@ app.post("/messageData", async (req, res) => {
       data = await collection.aggregate([
         { $match: { from: user_id } },
         { $sort: { _id: -1 } },
-        { $skip: 20 * messageLimit }, 
+        { $skip: 20 * messageLimit },
         { $limit: 20 },
-        { $project: { media_data: 0 } }, 
-        { $sort: { _id: 1 } }, 
+        { $project: { media_data: 0 } },
+        { $sort: { _id: 1 } },
       ]);
 
       data = await data.toArray();
@@ -607,7 +607,8 @@ const io = new Server(server, {
       "http://localhost:3000",
       "https://todoassignmentfrontend.onrender.com",
       "http://192.168.29.41:3000",
-      "https://cion-chat-app-frontend-11-1rwobmyui-tejas-projects-a32dbdf2.vercel.app"
+      "https://cion-chat-app-frontend-11-1rwobmyui-tejas-projects-a32dbdf2.vercel.app",
+      "https://cion-chat-app-frontend-11.vercel.app",
     ],
   },
 });
