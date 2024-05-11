@@ -345,6 +345,7 @@ app.post("/message", async function (request, response) {
       }
     );
     let responseData = await ourResponse.json();
+    let lastId = null;
     console.log(responseData);
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
@@ -368,7 +369,9 @@ app.post("/message", async function (request, response) {
           delete bufferData.docTypeData;
           coachMessage["media_data"] = bufferData;
         }
-        await messagesCollection.insertOne(coachMessage);
+
+        let messageResponse = await messagesCollection.insertOne(coachMessage);
+        lastId = messageResponse.insertedId;
         await patientsCollection.findOneAndUpdate(
           {
             patient_phone_number: to,
@@ -382,7 +385,7 @@ app.post("/message", async function (request, response) {
       } else {
         let num = "+15556105902";
         delete coachMessage.text;
-        await messagesCollection.updateOne(
+        let reactionResponse = await messagesCollection.updateOne(
           {
             id: data.message_id,
           },
@@ -428,8 +431,10 @@ app.post("/message", async function (request, response) {
             },
           ]
         );
+        lastId = reactionResponse.insertedId;
+        console.log(lastId, "lastId");
       }
-      response.status(201).json({ msg: "Created Successfully" });
+      response.status(201).json({ msg: "Created Successfully", _id: lastId });
     } else {
       response
         .status(401)
