@@ -5,8 +5,14 @@ const { MongoClient } = require("mongodb");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const fs = require("fs");
-const app = express();
 const cors = require("cors");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+
+const app = express();
+
+const server = createServer(app);
+
 app.use(cors());
 app.use(express.json());
 require("dotenv").config();
@@ -20,7 +26,7 @@ let initializeDBAndServer = async (req, res) => {
       "mongodb+srv://cionchat:Cionchat%401234@cluster0.xliikxl.mongodb.net/"
     );
     db = await client.db("test");
-    app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+    server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
   } catch (error) {
     console.log(error);
   }
@@ -93,7 +99,6 @@ const MediaFunction = async (media_id) => {
 
 app.post("/webhook", async function (req, res) {
   try {
-    //console.log(JSON.stringify(req.body));
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     const { entry } = req.body;
@@ -434,7 +439,7 @@ app.post("/message", async function (request, response) {
         lastId = reactionResponse.insertedId;
         console.log(lastId, "lastId");
       }
-      response.status(201).json({ msg: "Created Successfully", _id: lastId });
+      response.status(201).json({ msg: "Created Successfully", id: lastId });
     } else {
       response
         .status(401)
@@ -479,7 +484,6 @@ app.get("/users", async (req, res) => {
     data = await data.toArray();
     for (let userData of data) {
       let lastMessageId = userData.message_ids.at(-1);
-      console.log(lastMessageId, "lastMesageID");
       let lastMessage = await messageCollection.findOne(
         { id: lastMessageId },
         { projection: { media_data: 0 } }
@@ -499,7 +503,7 @@ app.get("/users", async (req, res) => {
 
 app.post("/messageData", async (req, res) => {
   try {
-    const { message_id, user_id, is_last = true } = req.body;
+    const { message_id, user_id, is_last = true, messageLimit } = req.body;
     console.log(message_id, user_id);
     let data;
     const collection = await db.collection("messages");
@@ -513,23 +517,17 @@ app.post("/messageData", async (req, res) => {
         data = await collection.findOne({ id: message_id });
       }
     } else {
-      // data = await collection
-      //   .find({ from: user_id })
-      //   .project({ media_data: 0 })
-      //   .sort({ _id: -1 })
-      //   .limit(15);
       data = await collection.aggregate([
         { $match: { from: user_id } }, // Filter documents by user_id
         { $sort: { _id: -1 } }, // Sort documents by _id in descending order
-        { $limit: 40 }, // Limit the result set to the last 10 documents
+        { $skip: 20 * messageLimit }, // Skip the first 20 documents
+        { $limit: 20 * messageLimit+20 }, // Limit the result set to the next 40 documents
         { $project: { media_data: 0 } }, // Exclude the "media_data" field
         { $sort: { _id: 1 } }, // Sort the result set by _id in ascending order
       ]);
 
       data = await data.toArray();
-      console.log(data);
     }
-
     res.send({ data: data });
   } catch (error) {
     console.log(error.message);
@@ -600,4 +598,35 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     .then((jsonData) => console.log(jsonData))
     .catch((error) => console.log(error.message));
   res.send({ msg: "Added" });
+});
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3001",
+      "http://localhost:3000",
+      "https://todoassignmentfrontend.onrender.com",
+      "http://192.168.29.41:3000",
+    ],
+  },
+});
+
+let users = {};
+io.on("connection", (socket) => {
+  socket.join("", (name) => {});
+  socket.on("join", (name) => {
+    users[socket.id] = name;
+    console.log(users);
+  });
+
+  socket.on("update message", (offlineMessage) => {
+    console.log(offlineMessage, "offline message");
+    socket.broadcast.emit("update message", offlineMessage);
+  });
+
+  socket.on("join room", (name, room) => {
+    console.log("joined");
+    socket.join(room);
+    socket.broadcast.emit("joined", name, room);
+  });
 });
