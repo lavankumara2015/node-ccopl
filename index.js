@@ -518,12 +518,12 @@ app.post("/messageData", async (req, res) => {
       }
     } else {
       data = await collection.aggregate([
-        { $match: { from: user_id } }, // Filter documents by user_id
-        { $sort: { _id: -1 } }, // Sort documents by _id in descending order
-        { $skip: 20 * messageLimit }, // Skip the first 20 documents
-        { $limit: 20 * messageLimit + 20 }, // Limit the result set to the next 40 documents
-        { $project: { media_data: 0 } }, // Exclude the "media_data" field
-        { $sort: { _id: 1 } }, // Sort the result set by _id in ascending order
+        { $match: { from: user_id } },
+        { $sort: { _id: -1 } },
+        { $skip: 20 * messageLimit }, 
+        { $limit: 20 },
+        { $project: { media_data: 0 } }, 
+        { $sort: { _id: 1 } }, 
       ]);
 
       data = await data.toArray();
@@ -607,6 +607,7 @@ const io = new Server(server, {
       "http://localhost:3000",
       "https://todoassignmentfrontend.onrender.com",
       "http://192.168.29.41:3000",
+      "https://cion-chat-app-frontend-11-1rwobmyui-tejas-projects-a32dbdf2.vercel.app"
     ],
   },
 });
