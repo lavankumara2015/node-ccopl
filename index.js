@@ -234,7 +234,7 @@ app.post("/webhook", async function (req, res) {
         //  console.log(mediaData?.insertedId)
         //  console.log(value.messages[0][`${value.messages[0].type}`].id);
 
-        let createdMessageId =  await messagesCollection.insertOne(
+        let createdMessageId = await messagesCollection.insertOne(
           addTimestamps({
             ...value.messages[0],
             message_type: "Incoming",
@@ -279,7 +279,7 @@ app.post("/webhook", async function (req, res) {
         }
       );
     }
-    res.io.emit("update user message", "data");
+    // res.io.emit("update user message", "data");
     res.send({ msg: "Reaction Updated" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
