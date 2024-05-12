@@ -258,7 +258,7 @@ app.post("/webhook", async function (req, res) {
         return res.send({ msg: "Media Added" });
       }
 
-      let updatedMessageId = await messagesCollection.insertOne(
+      let createdMessageId = await messagesCollection.insertOne(
         addTimestamps({
           ...value.messages[0],
           message_type: "Incoming",
