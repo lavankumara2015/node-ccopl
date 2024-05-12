@@ -146,10 +146,7 @@ app.post("/webhook", async function (req, res) {
             patient_phone_number_id: id,
           })
         );
-        res.io.emit("update patient", {
-          patientId: createdPatient.insertedId,
-          userNumber: value.messages[0].from,
-        });
+        res.io.emit("update patient", createdPatient);
       } else if (message) {
         let createdMessageId = await messagesCollection.updateOne(
           {
@@ -197,10 +194,7 @@ app.post("/webhook", async function (req, res) {
             },
           ]
         );
-        res.io.emit("update user message", {
-          messageId: createdMessageId.insertedId,
-          userNumber: value.messages[0].from,
-        });
+        res.io.emit("update user message", createdMessageId);
       }
 
       return res.send({ msg: "Reaction Updated" });
@@ -217,10 +211,7 @@ app.post("/webhook", async function (req, res) {
           patient_phone_number_id: id,
         })
       );
-      res.io.emit("update patient", {
-        patientId: createdPatient.insertedId,
-        userNumber: value.messages[0].from,
-      });
+      res.io.emit("update patient", createdPatient);
       let createdMessageId = await messagesCollection.insertOne(
         addTimestamps({
           ...value.messages[0],
@@ -228,10 +219,7 @@ app.post("/webhook", async function (req, res) {
           reactions: [],
         })
       );
-      res.io.emit("update user message",  {
-        messageId: createdMessageId.insertedId,
-        userNumber: value.messages[0].from,
-      });
+      res.io.emit("update user message", createdMessageId);
       return res.sendStatus(200);
     } else {
       if (
@@ -255,10 +243,7 @@ app.post("/webhook", async function (req, res) {
             media_data: mediaData,
           })
         );
-        res.io.emit("update user message",  {
-          messageId: createdMessageId.insertedId,
-          userNumber: value.messages[0].from,
-        });
+        res.io.emit("update user message", createdMessageId);
         console.log(value.messages[0].id, "media");
         await patientsCollection.findOneAndUpdate(
           {
@@ -281,10 +266,7 @@ app.post("/webhook", async function (req, res) {
           delivery_status: "",
         })
       );
-      res.io.emit("update user message",  {
-        messageId: createdMessageId.insertedId,
-        userNumber: value.messages[0].from,
-      });
+      res.io.emit("update user message", createdMessageId);
       console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
         {
@@ -297,7 +279,7 @@ app.post("/webhook", async function (req, res) {
         }
       );
     }
-    res.io.emit("update user message", "data");
+    // res.io.emit("update user message", "data");
     res.send({ msg: "Reaction Updated" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
