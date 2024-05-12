@@ -200,7 +200,7 @@ app.post("/webhook", async function (req, res) {
         res.io.emit("update user message", {
           messageId: createdMessageId.insertedId,
           userNumber: value.messages[0].from,
-          whatsappMessageId: value.messages[0].reaction.message_id,
+          whatsappMessageId: value.messages[0].id,
         });
       }
 
