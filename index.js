@@ -543,7 +543,7 @@ app.post("/messageData", async (req, res) => {
         { $skip: 20 * messageLimit },
         { $limit: 20 },
         { $project: { media_data: 0 } },
-        { $sort: { _id: 1 } },
+        { $sort: { _id: 1 }},
       ]);
 
       data = await data.toArray();
