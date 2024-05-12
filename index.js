@@ -297,7 +297,7 @@ app.post("/webhook", async function (req, res) {
         }
       );
     }
-    // res.io.emit("update user message", "data");
+    res.io.emit("update user message", "data");
     res.send({ msg: "Reaction Updated" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
