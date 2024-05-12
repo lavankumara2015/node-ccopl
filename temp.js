@@ -179,3 +179,21 @@ let a = {
     },
   ],
 };
+
+app.post("/applicantSetNewPassword", userAuthentication, async (req, res) => {
+  try {
+    const { email_id } = req;
+    const { new_password } = req.body;
+    const hashedPassword = await hash(password, 10);
+
+    let table_name = "";
+
+    const query = `UPDATE ${table_name} SET password = "${hashedPassword} WHERE email_id = "${email_id}"`;
+
+    res.send({
+      msg: "Updated Successfully",
+    });
+  } catch (error) {
+    console.log(error + "applicantSetNewPassword");
+  }
+});

@@ -13,7 +13,24 @@ const app = express();
 
 const server = createServer(app);
 
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3001",
+      "http://localhost:3000",
+      "https://todoassignmentfrontend.onrender.com",
+      "http://192.168.29.41:3000",
+      "https://cion-chat-app-frontend-11-1rwobmyui-tejas-projects-a32dbdf2.vercel.app",
+      "https://cion-chat-app-frontend-11.vercel.app",
+    ],
+  },
+});
+
 app.use(cors());
+app.use((req, res, next) => {
+  res.io = io;
+  next();
+});
 app.use(express.json());
 require("dotenv").config();
 const PORT = process.env.PORT || 3007;
@@ -199,6 +216,7 @@ app.post("/webhook", async function (req, res) {
           reactions: [],
         })
       );
+      
       return res.sendStatus(200);
     } else {
       if (
@@ -256,9 +274,11 @@ app.post("/webhook", async function (req, res) {
         }
       );
     }
+    res.io.emit("update user message", "data");
     res.send({ msg: "Reaction Updated" });
   } catch (error) {
     res.status(400).json({ msg: "Something Went Wrong", error: error.message });
+  } finally {
   }
 });
 
@@ -497,7 +517,7 @@ app.get("/users", async (req, res) => {
     res.send({ data: data });
   } catch (error) {
     console.log(error);
-    res.status(201).json({ msg: "Something Went Wrong", status: 400 });
+    res.status(400).json({ msg: "Something Went Wrong", status: 400 });
   }
 });
 
@@ -598,19 +618,6 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     .then((jsonData) => console.log(jsonData))
     .catch((error) => console.log(error.message));
   res.send({ msg: "Added" });
-});
-
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:3001",
-      "http://localhost:3000",
-      "https://todoassignmentfrontend.onrender.com",
-      "http://192.168.29.41:3000",
-      "https://cion-chat-app-frontend-11-1rwobmyui-tejas-projects-a32dbdf2.vercel.app",
-      "https://cion-chat-app-frontend-11.vercel.app",
-    ],
-  },
 });
 
 let users = {};
