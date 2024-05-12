@@ -200,6 +200,7 @@ app.post("/webhook", async function (req, res) {
         res.io.emit("update user message", {
           messageId: createdMessageId.insertedId,
           userNumber: value.messages[0].from,
+          whatsappMessageId: value.messages[0].reaction.message_id,
         });
       }
 
@@ -228,9 +229,10 @@ app.post("/webhook", async function (req, res) {
           reactions: [],
         })
       );
-      res.io.emit("update user message",  {
+      res.io.emit("update user message", {
         messageId: createdMessageId.insertedId,
         userNumber: value.messages[0].from,
+        whatsappMessageId: value.messages[0].id,
       });
       return res.sendStatus(200);
     } else {
@@ -255,9 +257,10 @@ app.post("/webhook", async function (req, res) {
             media_data: mediaData,
           })
         );
-        res.io.emit("update user message",  {
+        res.io.emit("update user message", {
           messageId: createdMessageId.insertedId,
           userNumber: value.messages[0].from,
+          whatsappMessageId: value.messages[0].id,
         });
         console.log(value.messages[0].id, "media");
         await patientsCollection.findOneAndUpdate(
@@ -281,9 +284,10 @@ app.post("/webhook", async function (req, res) {
           delivery_status: "",
         })
       );
-      res.io.emit("update user message",  {
+      res.io.emit("update user message", {
         messageId: createdMessageId.insertedId,
         userNumber: value.messages[0].from,
+        whatsappMessageId: value.messages[0].id,
       });
       console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
