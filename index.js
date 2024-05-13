@@ -484,13 +484,11 @@ app.post("/message", async function (request, response) {
         lastId = reactionResponse.insertedId;
         console.log(lastId, "lastId");
       }
-      response
-        .status(201)
-        .json({
-          msg: "Created Successfully",
-          whatsappMessageId: responseData.messages[0].id,
-          id: lastId,
-        });
+      response.status(201).json({
+        msg: "Created Successfully",
+        whatsappMessageId: responseData.messages[0].id,
+        id: lastId,
+      });
     } else {
       response
         .status(401)
@@ -527,23 +525,35 @@ app.post("/patient", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+app.post("/users", async (req, res) => {
   try {
+    const { user_id } = req.body;
     const collection = await db.collection("patients");
     const messageCollection = await db.collection("messages");
-    let data = await collection.find({}, { messages: 1 });
-    data = await data.toArray();
-    for (let userData of data) {
-      let lastMessageId = userData.message_ids.at(-1);
+    let data;
+    if (user_id) {
+      data = await collection.findOne({ _id: user_id }, { messages: 1 });
+      let lastMessageId = data.message_ids.at(-1);
       let lastMessage = await messageCollection.findOne(
         { id: lastMessageId },
         { projection: { media_data: 0 } }
       );
-      userData.lastMessage = lastMessage;
+      data.lastMessage = lastMessage;
+    } else {
+      data = await collection.find({}, { messages: 1 });
+      data = await data.toArray();
+      for (let userData of data) {
+        let lastMessageId = userData.message_ids.at(-1);
+        let lastMessage = await messageCollection.findOne(
+          { id: lastMessageId },
+          { projection: { media_data: 0 } }
+        );
+        userData.lastMessage = lastMessage;
+      }
+      data = data.sort(
+        (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
+      );
     }
-    data = data.sort(
-      (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
-    );
 
     res.send({ data: data });
   } catch (error) {
