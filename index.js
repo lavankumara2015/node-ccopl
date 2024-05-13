@@ -396,7 +396,7 @@ app.post("/message", async function (request, response) {
     );
     let responseData = await ourResponse.json();
     let lastId = null;
-    console.log(responseData);
+    console.log(responseData, "Reaponse");
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
@@ -484,7 +484,13 @@ app.post("/message", async function (request, response) {
         lastId = reactionResponse.insertedId;
         console.log(lastId, "lastId");
       }
-      response.status(201).json({ msg: "Created Successfully", id: lastId });
+      response
+        .status(201)
+        .json({
+          msg: "Created Successfully",
+          whatsappMessageId: responseData.messages[0].id,
+          id: lastId,
+        });
     } else {
       response
         .status(401)
@@ -591,8 +597,6 @@ app.get("/mediaData", async (req, res) => {
   }
 });
 
-// await collection.findOneAndUpdate([{ "messages.id": value.messages[0].id }, {$reaction: [{emoji: "", userNumber: value.metadata.display_phone_number}]}]);
-
 setTimeout(() => {
   let a = {
     messaging_product: "whatsapp",
@@ -643,10 +647,10 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     .then((response) => response.json())
     .then((jsonData) => {
       console.log(jsonData);
-      res.send({ msg: "Added" });
+      res.send({ msg: "Added", data: jsonData });
     })
     .catch((error) => {
-      console.log(error.message, "Erroe");
+      console.log(error.message, "Error");
       res.send({ msg: error.message });
     });
 });
@@ -656,7 +660,6 @@ io.on("connection", (socket) => {
   socket.join("", (name) => {});
   socket.on("join", (name) => {
     users[socket.id] = name;
-    console.log(users);
   });
 
   socket.on("update message", (offlineMessage) => {
