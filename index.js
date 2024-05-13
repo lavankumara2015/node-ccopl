@@ -363,8 +363,6 @@ async function getMessageObject(data, to, type = "text") {
         type: type,
         [type]: {
           id: mediaId,
-          filename: "myfile",
-          caption: "",
         },
       };
       if (type === "audio") {
@@ -621,7 +619,8 @@ const upload = multer({
   storage: storage,
 });
 
-let baseUrl = "https://node-ccoplnfjedo.onrender.com";
+let baseUrl =
+  "http://localhost:3005" || "https://node-ccoplnfjedo.onrender.com";
 app.use("/recieve-media", express.static("public"));
 app.post("/recieve-media", upload.single("file"), async (req, res) => {
   let { to, type } = req.body;
@@ -642,9 +641,14 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     body: JSON.stringify(pData),
   })
     .then((response) => response.json())
-    .then((jsonData) => console.log(jsonData))
-    .catch((error) => console.log(error.message));
-  res.send({ msg: "Added" });
+    .then((jsonData) => {
+      console.log(jsonData);
+      res.send({ msg: "Added" });
+    })
+    .catch((error) => {
+      console.log(error.message, "Erroe");
+      res.send({ msg: error.message });
+    });
 });
 
 let users = {};
