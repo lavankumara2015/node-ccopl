@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const FormData = require("form-data");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const fs = require("fs");
@@ -532,13 +532,19 @@ app.post("/users", async (req, res) => {
     const messageCollection = await db.collection("messages");
     let data;
     if (user_id) {
-      data = await collection.findOne({ _id: user_id }, { messages: 1 });
+      console.log(user_id);
+      data = await collection.findOne(
+        { _id: new ObjectId(`${user_id}`) },
+        { messages: 1 }
+      );
       let lastMessageId = data.message_ids.at(-1);
       let lastMessage = await messageCollection.findOne(
         { id: lastMessageId },
         { projection: { media_data: 0 } }
       );
-      data.lastMessage = lastMessage;
+      data.lastMessage = lastMessage ;
+
+      console.log(data);
     } else {
       data = await collection.find({}, { messages: 1 });
       data = await data.toArray();
