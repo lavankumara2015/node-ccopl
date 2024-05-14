@@ -346,7 +346,6 @@ async function getMessageObject(data, to, type = "text") {
       url: "https://graph.facebook.com/v19.0/232950459911097/media",
       headers: {
         Authorization: `Bearer ${process.env.MADE_WITH}`,
-        // "Content-Type": "image/jpeg",
         ...formData.getHeaders(),
       },
       data: formData,
@@ -490,9 +489,7 @@ app.post("/message", async function (request, response) {
         id: lastId,
       });
     } else {
-      response
-        .status(401)
-        .json({ msg: "Something Unexpected", error: responseData.message });
+      response.status(401).json({ msg: "Something Unexpected" });
     }
   } catch (error) {
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
@@ -528,7 +525,7 @@ app.post("/patient", async (req, res) => {
 app.post("/users", async (req, res) => {
   try {
     let { user_number } = req.body;
-    console.log(user_number, "User number")
+    console.log(user_number, "User number");
     const collection = await db.collection("patients");
     const messageCollection = await db.collection("messages");
     let data;
@@ -536,7 +533,7 @@ app.post("/users", async (req, res) => {
     if (user_number) {
       data = await collection.findOne(
         { patient_phone_number: user_number },
-        { messages: 1 } 
+        { messages: 1 }
       );
 
       if (!data) {
@@ -551,9 +548,7 @@ app.post("/users", async (req, res) => {
 
       data.lastMessage = lastMessage;
     } else {
-      data = await collection
-        .find({}, { messages: 1 } )
-        .toArray();
+      data = await collection.find({}, { messages: 1 }).toArray();
 
       for (let userData of data) {
         const lastMessageId =
@@ -711,9 +706,14 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     },
     body: JSON.stringify(pData),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (response.status === 401) {
+        throw new Error(response?.error || "Data couldn't upload");
+      }
+      return response.json();
+    })
     .then((jsonData) => {
-      console.log(jsonData);
+      console.log(jsonData, "JSOOOOOOOOOOS");
       res.send({ msg: "Added", data: jsonData });
     })
     .catch((error) => {
@@ -740,3 +740,50 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("joined", name, room);
   });
 });
+
+let messageArray = [
+  "hiiiiiiiiii",
+  "Hiiiiiiiiiiiii Sanju",
+  "What are you doing",
+  "Please complete your task",
+];
+
+async function sendMessage(time = 2) {
+  let j = 0;
+  let i = 0;
+  let interval = setInterval(async () => {
+    if (i === time) {
+      clearInterval(interval);
+    }
+    console.log(messageArray[j]);
+
+    let data = {
+      messaging_product: "whatsapp",
+      to: "916301156429",
+      type: "text",
+      data: {
+        text: messageArray[j],
+      },
+    };
+    let response = await fetch("http://localhost:3005/message", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    let responseData = await response.json();
+    console.log(responseData);
+    j++;
+    if (j === 4) {
+      j = 0;
+    }
+    i++;
+  }, 500);
+}
+
+function fetchData() {
+  sendMessage(30)
+    .then((r) => console.log(r))
+    .catch((err) => console.log(err));
+}

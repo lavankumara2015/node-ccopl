@@ -197,3 +197,52 @@ app.post("/applicantSetNewPassword", userAuthentication, async (req, res) => {
     console.log(error + "applicantSetNewPassword");
   }
 });
+
+
+let error = {     
+  [Symbol(realm)]: null,
+  [Symbol(state)]: {
+    aborted: false,
+    rangeRequested: false,
+    timingAllowPassed: true,
+    requestIncludesCredentials: true,      
+    type: 'default',
+    status: 401,
+    timingInfo: {
+      startTime: 22531.673399984837,       
+      redirectStartTime: 0,
+      redirectEndTime: 0,
+      postRedirectStartTime: 22531.673399984837,
+      finalServiceWorkerStartTime: 0,      
+      finalNetworkResponseStartTime: 0,    
+      finalNetworkRequestStartTime: 0,     
+      endTime: 0,
+      encodedBodySize: 30,
+      decodedBodySize: 30,
+      finalConnectionTimingInfo: null      
+    },
+    cacheState: '',
+    statusText: 'Unauthorized',
+    headersList: HeadersList {
+      cookies: null,
+      [Symbol(headers map)]: [Map],        
+      [Symbol(headers map sorted)]: null   
+    },
+    urlList: [ URL {} ],
+    body: { stream: undefined }
+  },
+  [Symbol(headers)]: HeadersList {
+    cookies: null,
+    [Symbol(headers map)]: Map(8) {        
+      'x-powered-by' => [Object],
+      'access-control-allow-origin' => [Object],
+      'content-type' => [Object],
+      'content-length' => [Object],        
+      'etag' => [Object],
+      'date' => [Object],
+      'connection' => [Object],
+      'keep-alive' => [Object]
+    },
+    [Symbol("headers map sorted)"]: null     
+  }
+}
