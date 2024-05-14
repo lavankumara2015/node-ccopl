@@ -8,11 +8,11 @@ const fs = require("fs");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const sharp = require("sharp");
 
 const app = express();
 
 const server = createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: [
@@ -113,6 +113,20 @@ const MediaFunction = async (media_id) => {
     return item;
   }
 };
+
+function compressImageBuffer(imageBuffer, quality = 50) {
+  return new Promise((resolve, reject) => {
+    sharp(imageBuffer)
+      .jpeg({ quality: quality })
+      .toBuffer((err, buffer) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(buffer);
+        }
+      });
+  });
+}
 
 app.post("/webhook", async function (req, res) {
   try {
@@ -245,6 +259,15 @@ app.post("/webhook", async function (req, res) {
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
+        let compressImage;
+        if (
+          mediaData &&
+          value.messages[0].type === "image" &&
+          Object.keys(mediaData)[0] === "image"
+        ) {
+          compressImage = await compressImageBuffer(mediaData.image, 20);
+        }
+
         //  console.log(mediaData?.insertedId)
         //  console.log(value.messages[0][`${value.messages[0].type}`].id);
 
@@ -255,6 +278,7 @@ app.post("/webhook", async function (req, res) {
             reactions: [],
             delivery_status: "",
             media_data: mediaData,
+            compressImage,
           })
         );
         res.io.emit("update user message", {
