@@ -137,5 +137,5 @@ POST http://localhost:3005/users
 Content-Type:  application/json 
 
 {
-  "user_id": "6641f5a7aaf93b4c35453b8a"
+  "user_number": "917895441429"
 }

@@ -527,46 +527,96 @@ app.post("/patient", async (req, res) => {
 
 app.post("/users", async (req, res) => {
   try {
-    const { user_id } = req.body;
+    let { user_number } = req.body;
     const collection = await db.collection("patients");
     const messageCollection = await db.collection("messages");
     let data;
-    if (user_id) {
-      console.log(user_id);
+
+    if (user_number) {
       data = await collection.findOne(
-        { _id: new ObjectId(`${user_id}`) },
-        { messages: 1 }
+        { patient_phone_number: user_number },
+        { projection: { messages: 1, message_ids: 1 } }
       );
-      let lastMessageId = data.message_ids.at(-1);
-      let lastMessage = await messageCollection.findOne(
+
+      if (!data) {
+        return res.status(404).json({ msg: "User not found", status: 404 });
+      }
+
+      const lastMessageId = data.message_ids[data.message_ids.length - 1];
+      const lastMessage = await messageCollection.findOne(
         { id: lastMessageId },
         { projection: { media_data: 0 } }
       );
-      data.lastMessage = lastMessage ;
 
-      console.log(data);
+      data.lastMessage = lastMessage;
     } else {
-      data = await collection.find({}, { messages: 1 });
-      data = await data.toArray();
+      data = await collection
+        .find({}, { projection: { messages: 1, message_ids: 1 } })
+        .toArray();
+
       for (let userData of data) {
-        let lastMessageId = userData.message_ids.at(-1);
-        let lastMessage = await messageCollection.findOne(
-          { id: lastMessageId },
-          { projection: { media_data: 0 } }
-        );
-        userData.lastMessage = lastMessage;
+        const lastMessageId =
+          userData.message_ids?.[userData.message_ids.length - 1];
+        if (lastMessageId) {
+          const lastMessage = await messageCollection.findOne(
+            { id: lastMessageId },
+            { projection: { media_data: 0 } }
+          );
+          userData.lastMessage = lastMessage;
+        }
       }
-      data = data.sort(
+
+      data = data.filter((userData) => userData.lastMessage); // Remove users without a last message
+      data.sort(
         (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
       );
     }
 
-    res.send({ data: data });
+    res.json({ data: data });
   } catch (error) {
-    console.log(error);
-    res.status(400).json({ msg: "Something Went Wrong", status: 400 });
+    console.error(error);
+    res.status(500).json({ msg: "Internal Server Error", status: 500 });
   }
 });
+
+// app.post("/users", async (req, res) => {
+//   try {
+//     let { user_id } = req.body;
+//     const collection = await db.collection("patients");
+//     const messageCollection = await db.collection("messages");
+//     let data;
+//     if (user_id) {
+//       user_id = ObjectId(user_id);
+//       data = await collection.findOne({ _id: user_id }, { messages: 1 });
+//       let lastMessageId = data.message_ids.at(-1);
+//       let lastMessage = await messageCollection.findOne(
+//         { id: lastMessageId },
+//         { projection: { media_data: 0 } }
+//       );
+//       data.lastMessage = lastMessage;
+//       console.log(data);
+//     } else {
+//       data = await collection.find({}, { messages: 1 });
+//       data = await data.toArray();
+//       for (let userData of data) {
+//         let lastMessageId = userData.message_ids.at(-1);
+//         let lastMessage = await messageCollection.findOne(
+//           { id: lastMessageId },
+//           { projection: { media_data: 0 } }
+//         );
+//         userData.lastMessage = lastMessage;
+//       }
+//       data = data.sort(
+//         (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
+//       );
+//     }
+
+//     res.send({ data: data });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(400).json({ msg: "Something Went Wrong", status: 400 });
+//   }
+// });
 
 app.post("/messageData", async (req, res) => {
   try {
