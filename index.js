@@ -8,7 +8,7 @@ const fs = require("fs");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const sharp = require("sharp");
+const gm = require("gm");
 
 const app = express();
 
@@ -116,9 +116,9 @@ const MediaFunction = async (media_id) => {
 
 function compressImageBuffer(imageBuffer, quality = 50) {
   return new Promise((resolve, reject) => {
-    sharp(imageBuffer)
-      .jpeg({ quality: quality })
-      .toBuffer((err, buffer) => {
+    gm(imageBuffer)
+      .quality(quality)
+      .toBuffer("JPG", (err, buffer) => {
         if (err) {
           reject(err);
         } else {
@@ -127,7 +127,6 @@ function compressImageBuffer(imageBuffer, quality = 50) {
       });
   });
 }
-
 app.post("/webhook", async function (req, res) {
   try {
     let patientsCollection = await db.collection("patients");
