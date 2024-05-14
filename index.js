@@ -535,7 +535,7 @@ app.post("/users", async (req, res) => {
     if (user_number) {
       data = await collection.findOne(
         { patient_phone_number: user_number },
-        { projection: { messages: 1, message_ids: 1 } }
+        { projection: { messages: 1 } }
       );
 
       if (!data) {
@@ -551,7 +551,7 @@ app.post("/users", async (req, res) => {
       data.lastMessage = lastMessage;
     } else {
       data = await collection
-        .find({}, { projection: { messages: 1, message_ids: 1 } })
+        .find({}, { projection: { messages: 1 } })
         .toArray();
 
       for (let userData of data) {
