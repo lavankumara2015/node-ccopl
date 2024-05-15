@@ -62,7 +62,7 @@ const Jimp = require("jimp");
 
 async function compressImageBuffer(
   imageBuffer,
-  quality = 70,
+  quality = 5,
   outputFormat = Jimp.MIME_JPEG
 ) {
   try {
@@ -146,6 +146,7 @@ app.post("/webhook", async function (req, res) {
     if (value.statuses !== undefined) {
       return res.status(200).json({ msg: "Not need status" });
     }
+
     let patient = await patientsCollection.findOne({
       patient_phone_number: value.messages[0].from,
     });
@@ -274,21 +275,26 @@ app.post("/webhook", async function (req, res) {
           value.messages[0][`${value.messages[0].type}`].id
         );
 
-        let createdMessageId = await messagesCollection.insertOne(
-          addTimestamps({
-            ...value.messages[0],
-            message_type: "Incoming",
-            reactions: [],
-            delivery_status: "",
-            media_data: mediaData,
-          })
-        );
+        delete mediaData["docTypeData"];
+
+        let createdMessage = addTimestamps({
+          ...value.messages[0],
+          message_type: "Incoming",
+          reactions: [],
+          delivery_status: "",
+          media_data: mediaData,
+        });
         let compressedImage;
         if (mediaData && value.messages[0].type === "image") {
-          compressedImage = await compressImageBuffer(mediaData.image, 20);
-          createdMessageId.compressedImage = compressedImage;
+          compressedImage = await compressImageBuffer(mediaData.image, 5);
+          createdMessage.compressedImage = compressedImage;
+          console.log(createdMessage);
         }
-        console.log(compressedImage);
+
+        let createdMessageId = await messagesCollection.insertOne(
+          createdMessage
+        );
+
         res.io.emit("update user message", {
           messageId: createdMessageId.insertedId,
           userNumber: value.messages[0].from,
@@ -451,7 +457,7 @@ app.post("/message", async function (request, response) {
           coachMessage["media_data"] = bufferData;
           let compressedImage;
           if (type === "image") {
-            compressedImage = await compressImageBuffer(bufferData.image, 10);
+            compressedImage = await compressImageBuffer(bufferData.image, 5);
             coachMessage.compressedImage = compressedImage;
           }
         }
