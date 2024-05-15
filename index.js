@@ -311,7 +311,7 @@ app.post("/webhook", async function (req, res) {
             },
           }
         );
-        return res.send({ msg: "Media Added" });
+        return res.status(200).json({ msg: "Media Added" });
       }
 
       let createdMessageId = await messagesCollection.insertOne(
