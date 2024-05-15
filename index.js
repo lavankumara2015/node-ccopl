@@ -8,6 +8,9 @@ const fs = require("fs");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
+require("dotenv").config();
+const { compressImageBuffer } = require("./components/index.js");
 
 const app = express();
 
@@ -26,22 +29,32 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+app.use(express.json());
 app.use((req, res, next) => {
   res.io = io;
   next();
 });
-app.use(express.json());
-require("dotenv").config();
-const PORT = process.env.PORT || 3007;
 
+const PORT = process.env.PORT || 3007;
 let db;
 
 let initializeDBAndServer = async (req, res) => {
   try {
-    client = new MongoClient(
+    const uploadsFolderPath = path.join(__dirname, "uploads");
+
+    if (!fs.existsSync(uploadsFolderPath)) {
+      fs.mkdir(uploadsFolderPath, (err) => {
+        if (err) {
+          console.error("Error creating uploads folder:", err);
+        } else {
+          console.log("Uploads folder created successfully.");
+        }
+      });
+    }
+    const client = new MongoClient(
       "mongodb+srv://cionchat:Cionchat%401234@cluster0.xliikxl.mongodb.net/"
     );
-    db = await client.db("test");
+    db = client.db("test");
     server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
   } catch (error) {
     console.log(error);
@@ -57,28 +70,6 @@ app.get("/", async function (request, response) {
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
 });
-
-const Jimp = require("jimp");
-
-async function compressImageBuffer(
-  imageBuffer,
-  quality = 5,
-  outputFormat = Jimp.MIME_JPEG
-) {
-  try {
-    // Read the image buffer
-    const image = await Jimp.read(imageBuffer);
-
-    // Compress the image with the specified quality
-    const compressedImageBuffer = await image
-      .quality(quality)
-      .getBufferAsync(outputFormat);
-    return compressedImageBuffer;
-  } catch (error) {
-    console.error("Error compressing image:", error);
-    throw error;
-  }
-}
 
 app.get("/webhook", function (req, res) {
   res.sendStatus(200);
@@ -114,8 +105,8 @@ const MediaFunction = async (media_id) => {
       },
     };
     const response = await axios.request(config);
+
     let contentType = response.headers["content-type"];
-    const collection = await db.collection("messages");
     let item;
     if (contentType.startsWith("image")) {
       item = { image: response.data };
@@ -288,7 +279,6 @@ app.post("/webhook", async function (req, res) {
         if (mediaData && value.messages[0].type === "image") {
           compressedImage = await compressImageBuffer(mediaData.image, 5);
           createdMessage.compressedImage = compressedImage;
-          console.log(createdMessage);
         }
 
         let createdMessageId = await messagesCollection.insertOne(
@@ -300,7 +290,6 @@ app.post("/webhook", async function (req, res) {
           userNumber: value.messages[0].from,
           whatsappMessageId: value.messages[0].id,
         });
-        console.log(value.messages[0].id, "media");
         await patientsCollection.findOneAndUpdate(
           {
             patient_phone_number: value.messages[0].from,
@@ -327,7 +316,6 @@ app.post("/webhook", async function (req, res) {
         userNumber: value.messages[0].from,
         whatsappMessageId: value.messages[0].id,
       });
-      console.log(value.messages[0].id, "jjjj");
       await patientsCollection.findOneAndUpdate(
         {
           patient_phone_number: value.messages[0].from,
@@ -392,7 +380,6 @@ async function getMessageObject(data, to, type = "text") {
     try {
       let response = await axios.request(mediaData);
       const mediaId = response.data.id;
-      console.log("media Id", mediaId, response.data);
       let obj = {
         messaging_product: "whatsapp",
         recipient_type: "individual",
@@ -408,7 +395,7 @@ async function getMessageObject(data, to, type = "text") {
       }
       return obj;
     } catch (error) {
-      console.log(error);
+      console.log(error.response.data);
     }
   }
 }
@@ -420,6 +407,7 @@ app.post("/message", async function (request, response) {
     let messagesCollection = await db.collection("messages");
 
     let formattedObject = await getMessageObject(data, to, type);
+    console.log(formattedObject);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -433,7 +421,6 @@ app.post("/message", async function (request, response) {
     );
     let responseData = await ourResponse.json();
     let lastId = null;
-    console.log(responseData, "Reaponse");
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
@@ -524,7 +511,6 @@ app.post("/message", async function (request, response) {
           ]
         );
         lastId = reactionResponse.insertedId;
-        console.log(lastId, "lastId");
       }
       response.status(201).json({
         msg: "Created Successfully",
@@ -535,6 +521,7 @@ app.post("/message", async function (request, response) {
       response.status(401).json({ msg: "Something Unexpected" });
     }
   } catch (error) {
+    console.log(error);
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
   }
 });
@@ -568,7 +555,6 @@ app.post("/patient", async (req, res) => {
 app.post("/users", async (req, res) => {
   try {
     let { user_number } = req.body;
-    console.log(user_number, "User number");
     const collection = await db.collection("patients");
     const messageCollection = await db.collection("messages");
     let data;
@@ -660,7 +646,6 @@ app.post("/users", async (req, res) => {
 app.post("/messageData", async (req, res) => {
   try {
     const { message_id, user_id, is_last = true, messageLimit } = req.body;
-    console.log(message_id, user_id);
     let data;
     const collection = await db.collection("messages");
     if (message_id) {
@@ -756,7 +741,6 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
       return response.json();
     })
     .then((jsonData) => {
-      console.log(jsonData, "JSOOOOOOOOOOS");
       res.send({ msg: "Added", data: jsonData });
     })
     .catch((error) => {
@@ -773,12 +757,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("update message", (offlineMessage) => {
-    console.log(offlineMessage, "offline message");
     socket.broadcast.emit("update message", offlineMessage);
   });
 
   socket.on("join room", (name, room) => {
-    console.log("joined");
     socket.join(room);
     socket.broadcast.emit("joined", name, room);
   });
@@ -798,7 +780,6 @@ async function sendMessage(time = 2) {
     if (i === time) {
       clearInterval(interval);
     }
-    console.log(messageArray[j]);
 
     let data = {
       messaging_product: "whatsapp",
@@ -816,7 +797,6 @@ async function sendMessage(time = 2) {
       body: JSON.stringify(data),
     });
     let responseData = await response.json();
-    console.log(responseData);
     j++;
     if (j === 4) {
       j = 0;
