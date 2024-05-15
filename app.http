@@ -50,6 +50,57 @@ Content-Type: application/json
 
 #########
 
+
+
+
+POST http://localhost:3005/webhook 
+Content-Type: application/json
+
+{
+    "object": "whatsapp_business_account",
+    "entry": [
+        {
+            "id": "8856996819413533",
+            "changes": [
+                {
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "metadata": {
+                            "display_phone_number": "16505553333",
+                            "phone_number_id": "93278229288239"
+                        },
+                        "contacts": [
+                            {
+                                "profile": {
+                                    "name": "Ramu"
+                                },
+                                "wa_id": "98494343242993439"
+                            }
+                        ],
+                        "messages": [
+                            {
+                                "from": "917895441429",
+                                "id": "wamid.id98349843843",
+                                "timestamp": "233483922",
+                                "type": "image",
+                                "image": {
+                                    "caption": "This is a caption",
+                                    "mime_type": "image/jpeg",
+                                    "sha256": "81d3bd8a8db4868c9520ed47186e8b7c5789e61ff79f7f834be6950b808a90d3",
+                                    "id": "3296685797302717"
+                                }
+                            }
+                        ]
+                    },
+                    "field": "messages"
+                }
+            ]
+        }
+    ]
+}
+
+#######
+
 POST http://localhost:3005/message
 Content-Type: application/json
 

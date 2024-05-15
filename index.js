@@ -8,7 +8,6 @@ const fs = require("fs");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const gm = require("gm");
 
 const app = express();
 
@@ -58,6 +57,28 @@ app.get("/", async function (request, response) {
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
   );
 });
+
+const Jimp = require("jimp");
+
+async function compressImageBuffer(
+  imageBuffer,
+  quality = 70,
+  outputFormat = Jimp.MIME_JPEG
+) {
+  try {
+    // Read the image buffer
+    const image = await Jimp.read(imageBuffer);
+
+    // Compress the image with the specified quality
+    const compressedImageBuffer = await image
+      .quality(quality)
+      .getBufferAsync(outputFormat);
+    return compressedImageBuffer;
+  } catch (error) {
+    console.error("Error compressing image:", error);
+    throw error;
+  }
+}
 
 app.get("/webhook", function (req, res) {
   res.sendStatus(200);
@@ -114,19 +135,6 @@ const MediaFunction = async (media_id) => {
   }
 };
 
-function compressImageBuffer(imageBuffer, quality = 50) {
-  return new Promise((resolve, reject) => {
-    gm(imageBuffer)
-      .quality(quality)
-      .toBuffer("JPG", (err, buffer) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(buffer);
-        }
-      });
-  });
-}
 app.post("/webhook", async function (req, res) {
   try {
     let patientsCollection = await db.collection("patients");
@@ -134,7 +142,6 @@ app.post("/webhook", async function (req, res) {
     const { entry } = req.body;
     const { changes, id } = entry[0];
     const { value } = changes[0];
-    //console.log(value.messages[0].type);
 
     if (value.statuses !== undefined) {
       return res.status(200).json({ msg: "Not need status" });
@@ -142,6 +149,26 @@ app.post("/webhook", async function (req, res) {
     let patient = await patientsCollection.findOne({
       patient_phone_number: value.messages[0].from,
     });
+
+    if (!patient) {
+      let createdPatient = await patientsCollection.insertOne(
+        addTimestamps({
+          name: value?.contacts[0]?.profile?.name || "",
+          image_url: "",
+          patient_phone_number: value.messages[0].from,
+          message_ids: [value.messages[0].id],
+          coach: "",
+          area: "",
+          stage: "",
+          patient_phone_number_id: id,
+        })
+      );
+      res.io.emit("update patient", {
+        patientId: createdPatient.insertedId,
+        userNumber: value.messages[0].from,
+      });
+    }
+
     if (value.messages[0].type === "reaction") {
       let message = await messagesCollection.findOne({
         id: value.messages[0].reaction.message_id,
@@ -218,23 +245,11 @@ app.post("/webhook", async function (req, res) {
       }
 
       return res.send({ msg: "Reaction Updated" });
-    } else if (!patient) {
-      let createdPatient = await patientsCollection.insertOne(
-        addTimestamps({
-          name: value?.contacts[0]?.profile?.name || "",
-          image_url: "",
-          patient_phone_number: value.messages[0].from,
-          message_ids: [value.messages[0].id],
-          coach: "",
-          area: "",
-          stage: "",
-          patient_phone_number_id: id,
-        })
-      );
-      res.io.emit("update patient", {
-        patientId: createdPatient.insertedId,
-        userNumber: value.messages[0].from,
-      });
+    } else if (
+      !["video", "audio", "image", "document", "sticker"].includes(
+        value.messages[0].type
+      )
+    ) {
       let createdMessageId = await messagesCollection.insertOne(
         addTimestamps({
           ...value.messages[0],
@@ -258,17 +273,6 @@ app.post("/webhook", async function (req, res) {
         let mediaData = await MediaFunction(
           value.messages[0][`${value.messages[0].type}`].id
         );
-        let compressImage;
-        if (
-          mediaData &&
-          value.messages[0].type === "image" &&
-          Object.keys(mediaData)[0] === "image"
-        ) {
-          compressImage = await compressImageBuffer(mediaData.image, 20);
-        }
-
-        //  console.log(mediaData?.insertedId)
-        //  console.log(value.messages[0][`${value.messages[0].type}`].id);
 
         let createdMessageId = await messagesCollection.insertOne(
           addTimestamps({
@@ -277,9 +281,14 @@ app.post("/webhook", async function (req, res) {
             reactions: [],
             delivery_status: "",
             media_data: mediaData,
-            compressImage,
           })
         );
+        let compressedImage;
+        if (mediaData && value.messages[0].type === "image") {
+          compressedImage = await compressImageBuffer(mediaData.image, 20);
+          createdMessageId.compressedImage = compressedImage;
+        }
+        console.log(compressedImage);
         res.io.emit("update user message", {
           messageId: createdMessageId.insertedId,
           userNumber: value.messages[0].from,
@@ -440,6 +449,11 @@ app.post("/message", async function (request, response) {
           coachMessage[`${type}`] = bufferData.docTypeData;
           delete bufferData.docTypeData;
           coachMessage["media_data"] = bufferData;
+          let compressedImage;
+          if (type === "image") {
+            compressedImage = await compressImageBuffer(bufferData.image, 10);
+            coachMessage.compressedImage = compressedImage;
+          }
         }
 
         let messageResponse = await messagesCollection.insertOne(coachMessage);
