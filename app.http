@@ -190,3 +190,16 @@ Content-Type:  application/json
 {
   "user_number": "917895441429"
 }
+
+
+############
+
+
+
+POST http://localhost:3005/get-user-note
+Content-Type: application/json 
+
+{
+  "note": "Hello Please call this guys at 9pm iDID", 
+  "patient_phone_number" : "917895441429"
+}

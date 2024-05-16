@@ -118,6 +118,8 @@ const MediaFunction = async (media_id) => {
       item = { audio: response.data };
     } else if (contentType.startsWith("sticker")) {
       item = { sticker: response.data };
+    } else if (contentType.startsWith("application/zip")) {
+      item = { document: response.data };
     } else {
       console.log("error");
     }
@@ -810,3 +812,24 @@ function fetchData() {
     .then((r) => console.log(r))
     .catch((err) => console.log(err));
 }
+
+app.post("/get-user-note", async (req, res) => {
+  try {
+    const { note, patient_phone_number } = req.body;
+    console.log(note, patient_phone_number);
+    const collection = db.collection("patients");
+    const result = await collection.updateOne(
+      { patient_phone_number },
+      { $set: { note } }
+    );
+
+    if (result.modifiedCount === 1) {
+      res.status(200).json({ message: "Note updated successfully" });
+    } else {
+      res.status(404).json({ message: "Patient not found" });
+    }
+  } catch (error) {
+    console.error("Error updating note:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
