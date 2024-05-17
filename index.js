@@ -625,7 +625,7 @@ app.post("/message", async function (request, response) {
   }
 });
 
-app.use(userAuthentication);
+// app.use(userAuthentication);
 
 app.post("/coach", async (req, res) => {
   try {
