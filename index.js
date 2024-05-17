@@ -11,6 +11,8 @@ const { Server } = require("socket.io");
 const path = require("path");
 require("dotenv").config();
 const { compressImageBuffer } = require("./components/index.js");
+const bcrypt = require("bcrypt");
+const { sign, verify } = require("jsonwebtoken");
 
 const app = express();
 
@@ -65,6 +67,96 @@ initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+const userAuthentication = (request, response, next) => {
+  try {
+    const authorization = request.headers.authorization;
+    console.log(authorization, "nteeeeeeeeeee");
+    let token;
+    if (authorization !== undefined) {
+      token = authorization.split(" ")[1];
+    }
+    // console.log(token);
+
+    if (token === undefined) {
+      response.status(400);
+      response.send({ msg: "Missing Token" });
+    } else {
+      verify(token, process.env.TOKEN_SECRET_KEY, (err, payload) => {
+        console.log(payload);
+        if (err) {
+          response.status(400);
+          response.send({ msg: "Invalid Token" });
+        } else {
+          request.email = payload.email_id;
+          next();
+        }
+      });
+    }
+  } catch (error) {
+    console.log(`Error occured in Middleware: ${error}`);
+    res.status(500).send({ msg: `Error occured in Middleware: ${error}` });
+  }
+};
+
+app.post("/coach/register", async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    if (username === "")
+      return res.send(401).json({ msg: "username is empty" });
+    else if (email === "") return res.send(401).json({ msg: "email is empty" });
+    else if (password === "")
+      return res.send(401).json({ msg: "password is empty" });
+    const collection = await db.collection("coaches");
+    const isUserExists = await collection.findOne({ email });
+    if (isUserExists) {
+      res.send(401).json({ msg: "User with this email already exists" });
+    } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      console.log(hashedPassword);
+      await collection.insertOne({
+        username,
+        password: hashedPassword,
+        email,
+      });
+      res.send({ msg: "Registered Successfully" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: error.message });
+  }
+});
+
+app.post("/coach/login", async (req, res) => {
+  try {
+    const { password, email } = req.body;
+    if (email === "") return res.send(401).json({ msg: "email is empty" });
+    else if (password === "")
+      return res.send(401).json({ msg: "password is empty" });
+    const collection = await db.collection("coaches");
+    const isUserExists = await collection.findOne({ email });
+    if (isUserExists) {
+      const isPasswordMatched = await bcrypt.compare(
+        password,
+        isUserExists.password
+      );
+      if (isPasswordMatched) {
+        let payload = { email };
+        let token = sign(payload, process.env.TOKEN_SECRET_KEY);
+        res.send({ msg: "Login Success", token });
+      } else {
+        res.status(400).send({
+          msg: "Wrong password",
+        });
+      }
+    } else {
+      res.status(401).send({ msg: "Invalid user" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: error.message });
+  }
+});
+
 app.get("/", async function (request, response) {
   response.send(
     "Simple WhatsApp Webhook tester</br>There is no front-end, see server.js for implementation!"
@@ -107,7 +199,7 @@ const MediaFunction = async (media_id) => {
     const response = await axios.request(config);
 
     let contentType = response.headers["content-type"];
-    console.log(contentType, "contentType")
+    console.log(contentType, "contentType");
     let item;
     if (contentType.startsWith("image")) {
       item = { image: response.data };
@@ -338,6 +430,8 @@ app.post("/webhook", async function (req, res) {
   }
 });
 
+
+
 async function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
@@ -398,7 +492,7 @@ async function getMessageObject(data, to, type = "text") {
       }
       return obj;
     } catch (error) {
-      console.log(error.response.data);
+      console.log(error.response);
     }
   }
 }
@@ -406,11 +500,12 @@ async function getMessageObject(data, to, type = "text") {
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
+    console.log(data);
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
 
     let formattedObject = await getMessageObject(data, to, type);
-    console.log(formattedObject);
+    console.log(formattedObject, "formatted");
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -423,6 +518,7 @@ app.post("/message", async function (request, response) {
       }
     );
     let responseData = await ourResponse.json();
+    console.log(responseData);
     let lastId = null;
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
@@ -529,6 +625,8 @@ app.post("/message", async function (request, response) {
   }
 });
 
+app.use(userAuthentication);
+
 app.post("/coach", async (req, res) => {
   try {
     const collection = await db.collection("coachs");
@@ -555,7 +653,7 @@ app.post("/patient", async (req, res) => {
   }
 });
 
-app.post("/users", async (req, res) => {
+app.post("/users", userAuthentication, async (req, res) => {
   try {
     let { user_number } = req.body;
     const collection = await db.collection("patients");
