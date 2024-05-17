@@ -122,7 +122,7 @@ const MediaFunction = async (media_id) => {
     } else if (contentType.startsWith("sticker")) {
       item = { sticker: response.data };
     } else {
-      console.log("error");
+      item = { document: response.data };
     }
     item.docTypeData = ourData;
     return item;
