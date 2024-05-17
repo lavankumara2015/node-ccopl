@@ -107,6 +107,7 @@ const MediaFunction = async (media_id) => {
     const response = await axios.request(config);
 
     let contentType = response.headers["content-type"];
+    console.log(contentType, "contentType")
     let item;
     if (contentType.startsWith("image")) {
       item = { image: response.data };
