@@ -112,14 +112,14 @@ const MediaFunction = async (media_id) => {
       item = { image: response.data };
     } else if (contentType.startsWith("video")) {
       item = { video: response.data };
-    } else if (contentType.startsWith("application/pdf")) {
+    } else if (contentType.startsWith("application")) {
+      item = { document: response.data };
+    } else if (contentType.startsWith("text/plain")) {
       item = { document: response.data };
     } else if (contentType.startsWith("audio")) {
       item = { audio: response.data };
     } else if (contentType.startsWith("sticker")) {
       item = { sticker: response.data };
-    } else if (contentType.startsWith("application/zip")) {
-      item = { document: response.data };
     } else {
       console.log("error");
     }
@@ -816,18 +816,13 @@ function fetchData() {
 app.post("/get-user-note", async (req, res) => {
   try {
     const { note, patient_phone_number } = req.body;
-    console.log(note, patient_phone_number);
     const collection = db.collection("patients");
     const result = await collection.updateOne(
       { patient_phone_number },
       { $set: { note } }
     );
 
-    if (result.modifiedCount === 1) {
-      res.status(200).json({ message: "Note updated successfully" });
-    } else {
-      res.status(404).json({ message: "Patient not found" });
-    }
+    res.status(200).json({ message: "Note updated successfully" });
   } catch (error) {
     console.error("Error updating note:", error);
     res.status(500).json({ message: "Internal server error" });
