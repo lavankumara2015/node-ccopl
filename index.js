@@ -88,9 +88,10 @@ const userAuthentication = (req, res, next) => {
         } else {
           const collection = await db.collection("coaches");
           const isUserAuthenticated = await collection.findOne({
-            email_id: payload.email_id,
+            email: payload.email,
           });
           if (isUserAuthenticated) {
+            console.log(isUserAuthenticated)
             const isPasswordMatched = await bcrypt.compare(
               payload.password,
               isUserAuthenticated.password
