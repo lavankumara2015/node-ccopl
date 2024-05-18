@@ -97,11 +97,11 @@ const userAuthentication = (request, response, next) => {
   }
 };
 
-app.use((req, res, next) => {
-  setTimeout(() => {
-    next();
-  }, 5000);
-});
+// app.use((req, res, next) => {
+//   setTimeout(() => {
+//     next();
+//   }, 5000);
+// });
 
 app.post("/coach/register", async (req, res) => {
   try {
