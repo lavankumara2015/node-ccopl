@@ -91,8 +91,17 @@ const userAuthentication = (req, res, next) => {
             email_id: payload.email_id,
           });
           if (isUserAuthenticated) {
-            req.email = payload.email_id;
-            next();
+            const isPasswordMatched = await bcrypt.compare(
+              payload.password,
+              isUserAuthenticated.password
+            );
+            if (isPasswordMatched) {
+              req.email = payload.email_id;
+              next();
+            } else {
+              // console.log(isPasswordMatched,isUserAuthenticated, payload.password)
+              res.status(400).json({msg: "Not a valid tdoken"})
+            }
           } else {
             res.status(404).json({ msg: "Token is not of valid user" });
           }
@@ -147,7 +156,7 @@ app.post("/coach/login", async (req, res) => {
         isUserExists.password
       );
       if (isPasswordMatched) {
-        let payload = { email };
+        let payload = { email, password };
         let token = sign(payload, process.env.TOKEN_SECRET_KEY);
         res.send({ msg: "Login Success", token });
       } else {
