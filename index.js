@@ -32,6 +32,7 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
 app.use((req, res, next) => {
   res.io = io;
   next();
@@ -75,7 +76,6 @@ const userAuthentication = (request, response, next) => {
     if (authorization !== undefined) {
       token = authorization.split(" ")[1];
     }
-    // console.log(token);
 
     if (token === undefined) {
       response.status(400);
@@ -102,14 +102,14 @@ app.post("/coach/register", async (req, res) => {
   try {
     const { username, password, email } = req.body;
     if (username === "")
-      return res.send(401).json({ msg: "username is empty" });
+      return res.status(401).json({ msg: "username is empty" });
     else if (email === "") return res.send(401).json({ msg: "email is empty" });
     else if (password === "")
       return res.send(401).json({ msg: "password is empty" });
     const collection = await db.collection("coaches");
     const isUserExists = await collection.findOne({ email });
     if (isUserExists) {
-      res.send(401).json({ msg: "User with this email already exists" });
+      res.status(401).json({ msg: "User with this email already exists" });
     } else {
       const hashedPassword = await bcrypt.hash(password, 10);
       console.log(hashedPassword);
@@ -129,9 +129,9 @@ app.post("/coach/register", async (req, res) => {
 app.post("/coach/login", async (req, res) => {
   try {
     const { password, email } = req.body;
-    if (email === "") return res.send(401).json({ msg: "email is empty" });
+    if (email === "") return res.status(401).json({ msg: "email is empty" });
     else if (password === "")
-      return res.send(401).json({ msg: "password is empty" });
+      return res.status(401).json({ msg: "password is empty" });
     const collection = await db.collection("coaches");
     const isUserExists = await collection.findOne({ email });
     if (isUserExists) {
@@ -155,6 +155,10 @@ app.post("/coach/login", async (req, res) => {
     console.log(error);
     res.send({ msg: error.message });
   }
+});
+
+app.post("/verify", userAuthentication, async (req, res) => {
+  res.status(201).json({ msg: "Verified" });
 });
 
 app.get("/", async function (request, response) {
@@ -430,8 +434,6 @@ app.post("/webhook", async function (req, res) {
   }
 });
 
-
-
 async function getMessageObject(data, to, type = "text") {
   if (type === "text") {
     let messages = {
@@ -625,7 +627,7 @@ app.post("/message", async function (request, response) {
   }
 });
 
-// app.use(userAuthentication);
+app.use(userAuthentication);
 
 app.post("/coach", async (req, res) => {
   try {
@@ -704,45 +706,6 @@ app.post("/users", userAuthentication, async (req, res) => {
     res.status(500).json({ msg: "Internal Server Error", status: 500 });
   }
 });
-
-// app.post("/users", async (req, res) => {
-//   try {
-//     let { user_id } = req.body;
-//     const collection = await db.collection("patients");
-//     const messageCollection = await db.collection("messages");
-//     let data;
-//     if (user_id) {
-//       user_id = ObjectId(user_id);
-//       data = await collection.findOne({ _id: user_id }, { messages: 1 });
-//       let lastMessageId = data.message_ids.at(-1);
-//       let lastMessage = await messageCollection.findOne(
-//         { id: lastMessageId },
-//         { projection: { media_data: 0 } }
-//       );
-//       data.lastMessage = lastMessage;
-//       console.log(data);
-//     } else {
-//       data = await collection.find({}, { messages: 1 });
-//       data = await data.toArray();
-//       for (let userData of data) {
-//         let lastMessageId = userData.message_ids.at(-1);
-//         let lastMessage = await messageCollection.findOne(
-//           { id: lastMessageId },
-//           { projection: { media_data: 0 } }
-//         );
-//         userData.lastMessage = lastMessage;
-//       }
-//       data = data.sort(
-//         (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
-//       );
-//     }
-
-//     res.send({ data: data });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(400).json({ msg: "Something Went Wrong", status: 400 });
-//   }
-// });
 
 app.post("/messageData", async (req, res) => {
   try {
