@@ -94,7 +94,7 @@ const userAuthentication = (req, res, next) => {
             req.email = payload.email_id;
             next();
           } else {
-            res.status(404).json({ msg: "Token is not valid user" });
+            res.status(404).json({ msg: "Token is not of valid user" });
           }
         }
       });
