@@ -97,7 +97,7 @@ const userAuthentication = (req, res, next) => {
               isUserAuthenticated.password
             );
             if (isPasswordMatched) {
-              req.email = payload.email_id;
+              req.email = payload.email;
               req.token = token;
               next();
             } else {
