@@ -30,6 +30,30 @@ const io = new Server(server, {
   },
 });
 
+let baseUrl = "https://node-ccoplnfjedo.onrender.com";
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  fetch(`${baseUrl}/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((r) => {
+      if (r.ok) {
+        console.log("Socket Verified")
+        next();
+      } else {
+        socket.emit("on_auth_error", "Auth failed");
+      }
+      return r.json();
+    })
+    .then((jsonData) => console.log(jsonData))
+    .catch((err) => socket.emit("on_auth_error", "Auth failed"));
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -70,7 +94,6 @@ app.use(bodyParser.json());
 const userAuthentication = (req, res, next) => {
   try {
     const authorization = req.headers.authorization;
-    console.log(authorization, "nteeeeeeeeeee");
     let token;
     if (authorization !== undefined) {
       token = authorization.split(" ")[1];
@@ -81,7 +104,6 @@ const userAuthentication = (req, res, next) => {
       res.send({ msg: "Missing Token" });
     } else {
       verify(token, process.env.TOKEN_SECRET_KEY, async (err, payload) => {
-        console.log(payload);
         if (err) {
           res.status(400);
           res.send({ msg: "Invalid Token" });
@@ -91,7 +113,6 @@ const userAuthentication = (req, res, next) => {
             email: payload.email,
           });
           if (isUserAuthenticated) {
-            console.log(isUserAuthenticated)
             const isPasswordMatched = await bcrypt.compare(
               payload.password,
               isUserAuthenticated.password
@@ -101,7 +122,6 @@ const userAuthentication = (req, res, next) => {
               req.token = token;
               next();
             } else {
-              // console.log(isPasswordMatched,isUserAuthenticated, payload.password)
               res.status(400).json({ msg: "Not a valid tdoken" });
             }
           } else {
@@ -130,7 +150,6 @@ app.post("/coach/register", async (req, res) => {
       res.status(401).json({ msg: "User with this email already exists" });
     } else {
       const hashedPassword = await bcrypt.hash(password, 10);
-      console.log(hashedPassword);
       await collection.insertOne({
         username,
         password: hashedPassword,
@@ -207,7 +226,6 @@ const MediaFunction = async (media_id) => {
     }
   );
   const ourData = await ourResponse.json();
-  console.log(ourData);
   if (ourData.url !== undefined) {
     let config = {
       method: "get",
@@ -541,12 +559,10 @@ async function getMessageObject(data, to, type = "text") {
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
-    console.log(data);
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
 
     let formattedObject = await getMessageObject(data, to, type);
-    console.log(formattedObject, "formatted");
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -559,7 +575,6 @@ app.post("/message", async function (request, response) {
       }
     );
     let responseData = await ourResponse.json();
-    console.log(responseData);
     let lastId = null;
     if (ourResponse.ok) {
       let coachMessage = addTimestamps({
@@ -814,7 +829,6 @@ const upload = multer({
   storage: storage,
 });
 
-let baseUrl = "https://node-ccoplnfjedo.onrender.com";
 app.use("/recieve-media", express.static("public"));
 app.post("/recieve-media", upload.single("file"), async (req, res) => {
   let { to, type } = req.body;
