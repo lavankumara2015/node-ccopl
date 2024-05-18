@@ -813,8 +813,7 @@ const upload = multer({
   storage: storage,
 });
 
-let baseUrl =
-  "http://localhost:3005" || "https://node-ccoplnfjedo.onrender.com";
+let baseUrl = "https://node-ccoplnfjedo.onrender.com";
 app.use("/recieve-media", express.static("public"));
 app.post("/recieve-media", upload.single("file"), async (req, res) => {
   let { to, type } = req.body;
