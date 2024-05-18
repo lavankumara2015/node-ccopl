@@ -100,7 +100,7 @@ const userAuthentication = (req, res, next) => {
               next();
             } else {
               // console.log(isPasswordMatched,isUserAuthenticated, payload.password)
-              res.status(400).json({msg: "Not a valid tdoken"})
+              res.status(400).json({ msg: "Not a valid tdoken" });
             }
           } else {
             res.status(404).json({ msg: "Token is not of valid user" });
@@ -449,6 +449,7 @@ app.post("/webhook", async function (req, res) {
   } finally {
   }
 });
+
 app.use(userAuthentication);
 
 async function getMessageObject(data, to, type = "text") {
