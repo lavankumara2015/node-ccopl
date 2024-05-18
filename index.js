@@ -11,7 +11,7 @@ const { Server } = require("socket.io");
 const path = require("path");
 require("dotenv").config();
 const { compressImageBuffer } = require("./components/index.js");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { sign, verify } = require("jsonwebtoken");
 
 const app = express();
@@ -44,7 +44,6 @@ let db;
 let initializeDBAndServer = async (req, res) => {
   try {
     const uploadsFolderPath = path.join(__dirname, "uploads");
-
     if (!fs.existsSync(uploadsFolderPath)) {
       fs.mkdir(uploadsFolderPath, (err) => {
         if (err) {
@@ -98,11 +97,11 @@ const userAuthentication = (request, response, next) => {
   }
 };
 
-// app.use((req, res, next) => {
-//   setTimeout(() => {
-//     next()
-//   }, 5000)
-// })
+app.use((req, res, next) => {
+  setTimeout(() => {
+    next();
+  }, 5000);
+});
 
 app.post("/coach/register", async (req, res) => {
   try {
