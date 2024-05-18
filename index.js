@@ -67,9 +67,9 @@ initializeDBAndServer();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-const userAuthentication = (request, response, next) => {
+const userAuthentication = (req, res, next) => {
   try {
-    const authorization = request.headers.authorization;
+    const authorization = req.headers.authorization;
     console.log(authorization, "nteeeeeeeeeee");
     let token;
     if (authorization !== undefined) {
@@ -77,17 +77,25 @@ const userAuthentication = (request, response, next) => {
     }
 
     if (token === undefined) {
-      response.status(400);
-      response.send({ msg: "Missing Token" });
+      res.status(400);
+      res.send({ msg: "Missing Token" });
     } else {
-      verify(token, process.env.TOKEN_SECRET_KEY, (err, payload) => {
+      verify(token, process.env.TOKEN_SECRET_KEY, async (err, payload) => {
         console.log(payload);
         if (err) {
-          response.status(400);
-          response.send({ msg: "Invalid Token" });
+          res.status(400);
+          res.send({ msg: "Invalid Token" });
         } else {
-          request.email = payload.email_id;
-          next();
+          const collection = await db.collection("coaches");
+          const isUserAuthenticated = await collection.findOne({
+            email_id: payload.email_id,
+          });
+          if (isUserAuthenticated) {
+            req.email = payload.email_id;
+            next();
+          } else {
+            res.status(404).json({ msg: "Token is not valid user" });
+          }
         }
       });
     }
@@ -96,12 +104,6 @@ const userAuthentication = (request, response, next) => {
     res.status(500).send({ msg: `Error occured in Middleware: ${error}` });
   }
 };
-
-// app.use((req, res, next) => {
-//   setTimeout(() => {
-//     next();
-//   }, 5000);
-// });
 
 app.post("/coach/register", async (req, res) => {
   try {
@@ -438,6 +440,7 @@ app.post("/webhook", async function (req, res) {
   } finally {
   }
 });
+app.use(userAuthentication);
 
 async function getMessageObject(data, to, type = "text") {
   if (type === "text") {
@@ -631,8 +634,6 @@ app.post("/message", async function (request, response) {
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
   }
 });
-
-app.use(userAuthentication);
 
 app.post("/coach", async (req, res) => {
   try {
