@@ -97,6 +97,7 @@ const userAuthentication = (req, res, next) => {
             );
             if (isPasswordMatched) {
               req.email = payload.email_id;
+              req.token = token;
               next();
             } else {
               // console.log(isPasswordMatched,isUserAuthenticated, payload.password)
@@ -240,6 +241,25 @@ const MediaFunction = async (media_id) => {
     return item;
   }
 };
+
+function deleteAllFiles(folderPath) {
+  fs.readdir(folderPath, (err, files) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    files.forEach((file) => {
+      const filePath = path.join(folderPath, file);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log("File deleted:", filePath);
+        }
+      });
+    });
+  });
+}
 
 app.post("/webhook", async function (req, res) {
   try {
@@ -798,6 +818,7 @@ let baseUrl =
 app.use("/recieve-media", express.static("public"));
 app.post("/recieve-media", upload.single("file"), async (req, res) => {
   let { to, type } = req.body;
+  let { token } = req;
   let pData = {
     messaging_product: "whatsapp",
     to: to,
@@ -811,6 +832,7 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(pData),
   })
@@ -821,6 +843,7 @@ app.post("/recieve-media", upload.single("file"), async (req, res) => {
       return response.json();
     })
     .then((jsonData) => {
+      deleteAllFiles("./uploads");
       res.send({ msg: "Added", data: jsonData });
     })
     .catch((error) => {
