@@ -43,7 +43,7 @@ io.use((socket, next) => {
   })
     .then((r) => {
       if (r.ok) {
-        console.log("Socket Verified")
+        console.log("Socket Verified");
         next();
       } else {
         socket.emit("on_auth_error", "Auth failed");
@@ -940,6 +940,31 @@ app.post("/get-user-note", async (req, res) => {
     res.status(200).json({ message: "Note updated successfully" });
   } catch (error) {
     console.error("Error updating note:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/get-coach-details", userAuthentication, async (req, res) => {
+  try {
+    const { email } = req;
+    const collection = await db.collection("coaches");
+    let coach = await collection.findOne(
+      { email },
+      {
+        $project: {
+          _id: 0, // Exclude _id field
+          username: 1,
+        },
+      }
+    );
+
+    if (coach) {
+      res.json({ data: { coachName: coach.username } });
+    } else {
+      res.status(404).json({ message: "Coach not found" });
+    }
+  } catch (error) {
+    console.error("Error getting coach details:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
