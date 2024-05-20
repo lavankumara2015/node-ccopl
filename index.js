@@ -78,7 +78,7 @@ let initializeDBAndServer = async (req, res) => {
       });
     }
     const client = new MongoClient(
-      "mongodb+srv://cionchat:Cionchat%401234@cluster0.xliikxl.mongodb.net/"
+      "mongodb+srv://NewUser:Tejas1234@cluster0.wsh36rz.mongodb.net/"
     );
     db = client.db("test");
     server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
