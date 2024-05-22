@@ -558,13 +558,15 @@ async function getMessageObject(data, to, type = "text") {
 }
 
 app.post("/message", async function (request, response) {
+  let user_mobile_number = "";
   try {
     const { type, data, to } = await request.body;
-    console.log(type)
+    user_mobile_number = to;
+    console.log(type);
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
 
-    let formattedObject = await getMessageObject(data, to, type); 
+    let formattedObject = await getMessageObject(data, to, type);
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -680,8 +682,8 @@ app.post("/message", async function (request, response) {
   } catch (error) {
     console.log(error);
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
-  } finally{
-    console.log("Message being")
+  } finally {
+    fetchData(user_mobile_number);
   }
 });
 
@@ -888,13 +890,13 @@ io.on("connection", (socket) => {
 });
 
 let messageArray = [
-  "hiiiiiiiiii",
-  "Hiiiiiiiiiiiii Sanju",
-  "What are you doing",
-  "Please complete your task",
+  "Hiiii",
+  "We will reach out to you in next 1 hour.",
+  "Thanks for reach out to us",
+  "Wait we will assign you a coach",
 ];
 
-async function sendMessage(time = 2) {
+async function sendMessage(time = 2, num) {
   let j = 0;
   let i = 0;
   let interval = setInterval(async () => {
@@ -904,7 +906,7 @@ async function sendMessage(time = 2) {
 
     let data = {
       messaging_product: "whatsapp",
-      to: "916301156429",
+      to: num,
       type: "text",
       data: {
         text: messageArray[j],
@@ -933,8 +935,8 @@ async function sendMessage(time = 2) {
   }, 500);
 }
 
-function fetchData() {
-  sendMessage(30)
+function fetchData(num) {
+  sendMessage(4, num)
     .then((r) => console.log(r))
     .catch((err) => console.log(err));
 }
