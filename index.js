@@ -560,10 +560,11 @@ async function getMessageObject(data, to, type = "text") {
 app.post("/message", async function (request, response) {
   try {
     const { type, data, to } = await request.body;
+    console.log(type)
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
 
-    let formattedObject = await getMessageObject(data, to, type);
+    let formattedObject = await getMessageObject(data, to, type); 
     const ourResponse = await fetch(
       "https://graph.facebook.com/v19.0/232950459911097/messages",
       {
@@ -679,6 +680,8 @@ app.post("/message", async function (request, response) {
   } catch (error) {
     console.log(error);
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
+  } finally{
+    console.log("Message being")
   }
 });
 
@@ -708,7 +711,7 @@ app.post("/patient", async (req, res) => {
   }
 });
 
-app.post("/users", userAuthentication, async (req, res) => {
+app.post("/users", async (req, res) => {
   try {
     let { user_number } = req.body;
     const collection = await db.collection("patients");
