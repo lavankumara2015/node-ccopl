@@ -582,7 +582,7 @@ app.post("/message", async function (request, response) {
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
         from: to,
-        coach_name: req.username,
+        coach_name: request.username,
         id: responseData.messages[0].id,
         type: type,
         text: {
