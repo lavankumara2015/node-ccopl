@@ -120,6 +120,7 @@ const userAuthentication = (req, res, next) => {
             if (isPasswordMatched) {
               req.email = payload.email;
               req.token = token;
+              req.username = isUserAuthenticated.username;
               next();
             } else {
               res.status(400).json({ msg: "Not a valid tdoken" });
@@ -580,7 +581,7 @@ app.post("/message", async function (request, response) {
       let coachMessage = addTimestamps({
         coach_phone_number: "+15556105902",
         from: to,
-        coach_name: "",
+        coach_name: req.username,
         id: responseData.messages[0].id,
         type: type,
         text: {
@@ -906,14 +907,21 @@ async function sendMessage(time = 2) {
         text: messageArray[j],
       },
     };
-    let response = await fetch("http://localhost:3005/message", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-    let responseData = await response.json();
+    try {
+      let response = await fetch("http://localhost:3005/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhd2FuQGdtYWlsLmNvbSIsInBhc3N3b3JkIjoicGF3YW4iLCJpYXQiOjE3MTYyNzExNTF9.EEroowdMS2M0a-2WF4OIiA7aqEKkeOG0AgbhfVsI-r4",
+        },
+        body: JSON.stringify(data),
+      });
+      let responseData = await response.json();
+    } catch (error) {
+      console.log(error);
+    }
+
     j++;
     if (j === 4) {
       j = 0;
@@ -927,6 +935,8 @@ function fetchData() {
     .then((r) => console.log(r))
     .catch((err) => console.log(err));
 }
+
+// fetchData();
 
 app.post("/get-user-note", async (req, res) => {
   try {
@@ -944,22 +954,23 @@ app.post("/get-user-note", async (req, res) => {
   }
 });
 
-app.post("/get-coach-details", userAuthentication, async (req, res) => {
+app.post("/get-coach-details", async (req, res) => {
   try {
-    const { email } = req;
+    const { email, username } = req;
     const collection = await db.collection("coaches");
-    let coach = await collection.findOne(
-      { email },
-      {
-        $project: {
-          _id: 0, // Exclude _id field
-          username: 1,
-        },
-      }
-    );
+    // let coach = await collection.findOne(
+    //   { email },
+    //   {
+    //     $project: {
+    //       _id: 0, // Exclude _id field
+    //       username: 1,
+    //     },
+    //   }
+    // );
+    // console.log(username)
 
-    if (coach) {
-      res.json({ data: { coachName: coach.username } });
+    if (username) {
+      res.json({ data: { coachName: username } });
     } else {
       res.status(404).json({ message: "Coach not found" });
     }
