@@ -890,29 +890,22 @@ io.on("connection", (socket) => {
 
 let messageArray = [
   "Hiiii",
-  "We will reach out to you in next 1 hour.",
   "Thanks for reach out to us",
-  "Wait we will assign you a coach",
+  "We will call you in next 1 hour.",
 ];
 
-async function sendMessage(time = 2, num) {
-  let j = 0;
-  let i = 0;
-  let interval = setInterval(async () => {
-    if (i === time) {
-      clearInterval(interval);
-    }
-
+async function sendMessage(num) {
+  for await (let message of messageArray) {
     let data = {
       messaging_product: "whatsapp",
       to: num,
       type: "text",
       data: {
-        text: messageArray[j],
+        text: message,
       },
     };
     try {
-      let response = await fetch("http://localhost:3005/message", {
+      let response = await fetch(`${baseUrl}/message`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -925,22 +918,16 @@ async function sendMessage(time = 2, num) {
     } catch (error) {
       console.log(error);
     }
-
-    j++;
-    if (j === 3) {
-      j = 0;
-    }
-    i++;
-  }, 500);
+  }
 }
 
 function fetchData(num) {
-  sendMessage(4, num)
+  sendMessage(num)
     .then((r) => console.log(r))
     .catch((err) => console.log(err));
 }
 
-// fetchData(917895441429);
+fetchData(917895441429);
 
 app.post("/get-user-note", async (req, res) => {
   try {
@@ -987,7 +974,7 @@ app.post("/get-coach-details", async (req, res) => {
 app.post("/update-patient", async (req, res) => {
   try {
     const { from, name, coach, stage, center, area } = req.body;
-    const collection = await db.collection("patients")
+    const collection = await db.collection("patients");
     console.log(from, name, coach, stage, center, area);
     await collection.updateOne(
       {
@@ -1003,10 +990,10 @@ app.post("/update-patient", async (req, res) => {
         },
       }
     );
-    console.log("updated")
+    console.log("updated");
     res.status(200).json({ msg: "Updated Successfully" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ message: "Internal server error " + error.message });
   }
 });
