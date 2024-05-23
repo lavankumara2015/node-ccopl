@@ -891,7 +891,7 @@ io.on("connection", (socket) => {
 let messageArray = [
   "Hiiii",
   "Thanks for reach out to us",
-  "We will call you in next 1 hour.",
+  "We will call you in next 1 hour",
 ];
 
 async function sendMessage(num) {
