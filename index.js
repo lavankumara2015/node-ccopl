@@ -927,7 +927,7 @@ function fetchData(num) {
     .catch((err) => console.log(err));
 }
 
-fetchData(917895441429);
+// fetchData(917895441429);
 
 app.post("/get-user-note", async (req, res) => {
   try {
