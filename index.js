@@ -308,7 +308,7 @@ app.post("/webhook", async function (req, res) {
           message_ids: [value.messages[0].id],
           coach: "",
           area: "",
-          stage: "",
+          stage: "Pre-OP",
           patient_phone_number_id: id,
         })
       );
@@ -387,11 +387,11 @@ app.post("/webhook", async function (req, res) {
             },
           ]
         );
-        res.io.emit("update user message", {
-          messageId: createdMessageId.insertedId,
-          userNumber: value.messages[0].from,
-          whatsappMessageId: value.messages[0].reaction.message_id,
-        });
+        // res.io.emit("update user message", {
+        //   messageId: createdMessageId.insertedId,
+        //   userNumber: value.messages[0].from,
+        //   whatsappMessageId: value.messages[0].reaction.message_id,
+        // });
       }
 
       return res.send({ msg: "Reaction Updated" });
