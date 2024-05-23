@@ -282,12 +282,14 @@ function deleteAllFiles(folderPath) {
 }
 
 app.post("/webhook", async function (req, res) {
+  let patient_mobile_number;
   try {
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
     const { entry } = req.body;
     const { changes, id } = entry[0];
     const { value } = changes[0];
+    patient_mobile_number = value.messages[0].from;
 
     if (value.statuses !== undefined) {
       return res.status(200).json({ msg: "Not need status" });
@@ -314,6 +316,7 @@ app.post("/webhook", async function (req, res) {
         patientId: createdPatient.insertedId,
         userNumber: value.messages[0].from,
       });
+      fetchData(patient_mobile_number);
     }
 
     if (value.messages[0].type === "reaction") {
@@ -558,10 +561,8 @@ async function getMessageObject(data, to, type = "text") {
 }
 
 app.post("/message", async function (request, response) {
-  let user_mobile_number = "";
   try {
     const { type, data, to } = await request.body;
-    user_mobile_number = to;
     console.log(type);
     let patientsCollection = await db.collection("patients");
     let messagesCollection = await db.collection("messages");
@@ -682,8 +683,6 @@ app.post("/message", async function (request, response) {
   } catch (error) {
     console.log(error);
     response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
-  } finally {
-    fetchData(user_mobile_number);
   }
 });
 
@@ -928,7 +927,7 @@ async function sendMessage(time = 2, num) {
     }
 
     j++;
-    if (j === 4) {
+    if (j === 3) {
       j = 0;
     }
     i++;
@@ -941,7 +940,7 @@ function fetchData(num) {
     .catch((err) => console.log(err));
 }
 
-// fetchData();
+// fetchData(917895441429);
 
 app.post("/get-user-note", async (req, res) => {
   try {
@@ -982,5 +981,32 @@ app.post("/get-coach-details", async (req, res) => {
   } catch (error) {
     console.error("Error getting coach details:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/update-patient", async (req, res) => {
+  try {
+    const { from, name, coach, stage, center, area } = req.body;
+    const collection = await db.collection("patients")
+    console.log(from, name, coach, stage, center, area);
+    await collection.updateOne(
+      {
+        patient_phone_number: from,
+      },
+      {
+        $set: {
+          name,
+          stage,
+          center,
+          area,
+          coach,
+        },
+      }
+    );
+    console.log("updated")
+    res.status(200).json({ msg: "Updated Successfully" });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "Internal server error " + error.message });
   }
 });
