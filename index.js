@@ -105,8 +105,7 @@ const userAuthentication = (req, res, next) => {
     } else {
       verify(token, process.env.TOKEN_SECRET_KEY, async (err, payload) => {
         if (err) {
-          res.status(400);
-          res.send({ msg: "Invalid Token" });
+          res.status(401).send({ msg: "Invalid Token" });
         } else {
           const collection = await db.collection("coaches");
           const isUserAuthenticated = await collection.findOne({
@@ -137,6 +136,40 @@ const userAuthentication = (req, res, next) => {
   }
 };
 
+const ourApps = ["carrier_page", "chat_app", "crm_page"];
+
+// use to check permission of user
+const permissionCheck = async (req, res, next, page = "carrier_page") => {
+  try {
+    let { email } = req;
+    console.log(email)
+    if (!email) {
+      email = req.body.email;
+      console.log(email)
+    }
+    
+    const permissionCollection = await db.collection("permission");
+    const permission = await permissionCollection.findOne({ email });
+    if (permission) {
+      if (permission[page]) {
+        console.log(`You have permission for ${page}`);
+        return next();
+      } else {
+        console.log("You don't have permission 1");
+        res.status(401).json({ msg: "Unauthorized" });
+      }
+    } else {
+      console.log("You don't have permission 2");
+      res
+        .status(401)
+        .json({ msg: "You don't have permission to access this resource" });
+    }
+  } catch (error) {
+    console.log("You don't have permission 3", error);
+    res.status(400).json({ msg: "Unauthorized" });
+  }
+};
+
 app.post("/coach/register", async (req, res) => {
   try {
     const { username, password, email } = req.body;
@@ -157,6 +190,13 @@ app.post("/coach/register", async (req, res) => {
         email,
       });
       res.send({ msg: "Registered Successfully" });
+      const permission = await db.collection("permission");
+      await permission.insertOne({
+        email,
+        crm_page: false,
+        chat_app: false,
+        carrier_page: true,
+      });
     }
   } catch (error) {
     console.log(error);
@@ -164,40 +204,49 @@ app.post("/coach/register", async (req, res) => {
   }
 });
 
-app.post("/coach/login", async (req, res) => {
-  try {
-    const { password, email } = req.body;
-    if (email === "") return res.status(401).json({ msg: "email is empty" });
-    else if (password === "")
-      return res.status(401).json({ msg: "password is empty" });
-    const collection = await db.collection("coaches");
-    const isUserExists = await collection.findOne({ email });
-    if (isUserExists) {
-      const isPasswordMatched = await bcrypt.compare(
-        password,
-        isUserExists.password
-      );
-      if (isPasswordMatched) {
-        let payload = { email, password };
-        let token = sign(payload, process.env.TOKEN_SECRET_KEY);
-        res.send({ msg: "Login Success", token });
+app.post(
+  "/coach/login",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { password, email } = req.body;
+      if (email === "") return res.status(401).json({ msg: "email is empty" });
+      else if (password === "")
+        return res.status(401).json({ msg: "password is empty" });
+      const collection = await db.collection("coaches");
+      const isUserExists = await collection.findOne({ email });
+      if (isUserExists) {
+        const isPasswordMatched = await bcrypt.compare(
+          password,
+          isUserExists.password
+        );
+        if (isPasswordMatched) {
+          let payload = { email, password };
+          let token = sign(payload, process.env.TOKEN_SECRET_KEY);
+          res.send({ msg: "Login Success", token });
+        } else {
+          res.status(400).send({
+            msg: "Wrong password",
+          });
+        }
       } else {
-        res.status(400).send({
-          msg: "Wrong password",
-        });
+        res.status(401).send({ msg: "Invalid user" });
       }
-    } else {
-      res.status(401).send({ msg: "Invalid user" });
+    } catch (error) {
+      console.log(error);
+      res.send({ msg: error.message });
     }
-  } catch (error) {
-    console.log(error);
-    res.send({ msg: error.message });
   }
-});
+);
 
-app.post("/verify", userAuthentication, async (req, res) => {
-  res.status(201).json({ msg: "Verified" });
-});
+app.post(
+  "/verify",
+  userAuthentication,
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    res.status(201).json({ msg: "Verified" });
+  }
+);
 
 app.get("/", async function (request, response) {
   response.send(
@@ -560,253 +609,287 @@ async function getMessageObject(data, to, type = "text") {
   }
 }
 
-app.post("/message", async function (request, response) {
-  try {
-    const { type, data, to } = await request.body;
-    console.log(type);
-    let patientsCollection = await db.collection("patients");
-    let messagesCollection = await db.collection("messages");
+app.post(
+  "/message",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async function (request, response) {
+    try {
+      const { type, data, to } = await request.body;
+      console.log(type);
+      let patientsCollection = await db.collection("patients");
+      let messagesCollection = await db.collection("messages");
 
-    let formattedObject = await getMessageObject(data, to, type);
-    const ourResponse = await fetch(
-      "https://graph.facebook.com/v19.0/232950459911097/messages",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.MADE_WITH} `,
-        },
-        body: JSON.stringify(formattedObject),
-      }
-    );
-    let responseData = await ourResponse.json();
-    let lastId = null;
-    if (ourResponse.ok) {
-      let coachMessage = addTimestamps({
-        coach_phone_number: "+15556105902",
-        from: to,
-        coach_name: request.username,
-        id: responseData.messages[0].id,
-        type: type,
-        text: {
-          body: data.text,
-        },
-        reactions: [],
-        message_type: "Outgoing",
-        delivery_status: "",
-      });
-      if (type !== "reaction") {
-        if (["video", "audio", "image", "document", "sticker"].includes(type)) {
-          let bufferData = await MediaFunction(formattedObject[`${type}`].id);
-          delete coachMessage.text;
-          coachMessage[`${type}`] = bufferData.docTypeData;
-          delete bufferData.docTypeData;
-          coachMessage["media_data"] = bufferData;
-          let compressedImage;
-          if (type === "image") {
-            compressedImage = await compressImageBuffer(bufferData.image, 5);
-            coachMessage.compressedImage = compressedImage;
-          }
+      let formattedObject = await getMessageObject(data, to, type);
+      const ourResponse = await fetch(
+        "https://graph.facebook.com/v19.0/232950459911097/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.MADE_WITH} `,
+          },
+          body: JSON.stringify(formattedObject),
         }
-
-        let messageResponse = await messagesCollection.insertOne(coachMessage);
-        lastId = messageResponse.insertedId;
-        await patientsCollection.findOneAndUpdate(
-          {
-            patient_phone_number: to,
+      );
+      let responseData = await ourResponse.json();
+      let lastId = null;
+      if (ourResponse.ok) {
+        let coachMessage = addTimestamps({
+          coach_phone_number: "+15556105902",
+          from: to,
+          coach_name: request.username,
+          id: responseData.messages[0].id,
+          type: type,
+          text: {
+            body: data.text,
           },
-          {
-            $push: {
-              message_ids: responseData.messages[0].id,
-            },
+          reactions: [],
+          message_type: "Outgoing",
+          delivery_status: "",
+        });
+        if (type !== "reaction") {
+          if (
+            ["video", "audio", "image", "document", "sticker"].includes(type)
+          ) {
+            let bufferData = await MediaFunction(formattedObject[`${type}`].id);
+            delete coachMessage.text;
+            coachMessage[`${type}`] = bufferData.docTypeData;
+            delete bufferData.docTypeData;
+            coachMessage["media_data"] = bufferData;
+            let compressedImage;
+            if (type === "image") {
+              compressedImage = await compressImageBuffer(bufferData.image, 5);
+              coachMessage.compressedImage = compressedImage;
+            }
           }
-        );
-      } else {
-        let num = "+15556105902";
-        delete coachMessage.text;
-        let reactionResponse = await messagesCollection.updateOne(
-          {
-            id: data.message_id,
-          },
-          [
+
+          let messageResponse = await messagesCollection.insertOne(
+            coachMessage
+          );
+          lastId = messageResponse.insertedId;
+          await patientsCollection.findOneAndUpdate(
             {
-              $set: {
-                updated_at: new Date(),
-                reactions: {
-                  $cond: {
-                    if: { $in: [num, "$reactions.user"] },
-                    then: {
-                      $map: {
-                        input: "$reactions",
-                        as: "reaction",
-                        in: {
-                          $cond: {
-                            if: {
-                              $eq: ["$$reaction.user", num],
+              patient_phone_number: to,
+            },
+            {
+              $push: {
+                message_ids: responseData.messages[0].id,
+              },
+            }
+          );
+        } else {
+          let num = "+15556105902";
+          delete coachMessage.text;
+          let reactionResponse = await messagesCollection.updateOne(
+            {
+              id: data.message_id,
+            },
+            [
+              {
+                $set: {
+                  updated_at: new Date(),
+                  reactions: {
+                    $cond: {
+                      if: { $in: [num, "$reactions.user"] },
+                      then: {
+                        $map: {
+                          input: "$reactions",
+                          as: "reaction",
+                          in: {
+                            $cond: {
+                              if: {
+                                $eq: ["$$reaction.user", num],
+                              },
+                              then: {
+                                user: num,
+                                emoji: data.emoji,
+                              },
+                              else: "$$reaction",
                             },
-                            then: {
-                              user: num,
-                              emoji: data.emoji,
-                            },
-                            else: "$$reaction",
                           },
                         },
                       },
-                    },
-                    else: {
-                      $concatArrays: [
-                        "$reactions",
-                        [
-                          {
-                            user: num,
-                            emoji: data.emoji,
-                          },
+                      else: {
+                        $concatArrays: [
+                          "$reactions",
+                          [
+                            {
+                              user: num,
+                              emoji: data.emoji,
+                            },
+                          ],
                         ],
-                      ],
+                      },
                     },
                   },
                 },
               },
-            },
-          ]
-        );
-        lastId = reactionResponse.insertedId;
-      }
-      response.status(201).json({
-        msg: "Created Successfully",
-        whatsappMessageId: responseData.messages[0].id,
-        id: lastId,
-      });
-    } else {
-      response.status(401).json({ msg: "Something Unexpected" });
-    }
-  } catch (error) {
-    console.log(error);
-    response.status(400).json({ msg: `Something Went Wrong ${error.message}` });
-  }
-});
-
-app.post("/coach", async (req, res) => {
-  try {
-    const collection = await db.collection("coachs");
-    const { name, mobile, password } = req.body;
-    if (!name || !mobile || !password)
-      return res.status(201).json({ msg: "Data cannot be empty", status: 400 });
-    const coach = {
-      username: name,
-      mobileNum: mobile,
-      password: password,
-    };
-    await collection.insertOne(coach);
-    res.status(201).json({ msg: "Coaches Created", status: 201, password });
-  } catch (error) {
-    res.status(201).json({ msg: "Something Went Wrong", status: 400 });
-  }
-});
-
-app.post("/patient", async (req, res) => {
-  try {
-    const { name } = req.body;
-  } catch (error) {
-    res.status(201).json({ msg: "Something Went Wrong Message", status: 400 });
-  }
-});
-
-app.post("/users", async (req, res) => {
-  try {
-    let { user_number } = req.body;
-    const collection = await db.collection("patients");
-    const messageCollection = await db.collection("messages");
-    let data;
-
-    if (user_number) {
-      data = await collection.findOne(
-        { patient_phone_number: user_number },
-        { messages: 1 }
-      );
-
-      if (!data) {
-        return res.status(404).json({ msg: "User not found", status: 404 });
-      }
-
-      const lastMessageId = data.message_ids[data.message_ids.length - 1];
-      const lastMessage = await messageCollection.findOne(
-        { id: lastMessageId },
-        { projection: { media_data: 0 } }
-      );
-
-      data.lastMessage = lastMessage;
-    } else {
-      data = await collection.find({}, { messages: 1 }).toArray();
-
-      for (let userData of data) {
-        const lastMessageId =
-          userData.message_ids?.[userData.message_ids.length - 1];
-        if (lastMessageId) {
-          const lastMessage = await messageCollection.findOne(
-            { id: lastMessageId },
-            { projection: { media_data: 0 } }
+            ]
           );
-          userData.lastMessage = lastMessage;
+          lastId = reactionResponse.insertedId;
         }
+        response.status(201).json({
+          msg: "Created Successfully",
+          whatsappMessageId: responseData.messages[0].id,
+          id: lastId,
+        });
+      } else {
+        response.status(401).json({ msg: "Something Unexpected" });
       }
-
-      data = data.filter((userData) => userData.lastMessage); // Remove users without a last message
-      data.sort(
-        (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
-      );
+    } catch (error) {
+      console.log(error);
+      response
+        .status(400)
+        .json({ msg: `Something Went Wrong ${error.message}` });
     }
-
-    res.json({ data: data });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: "Internal Server Error", status: 500 });
   }
-});
+);
 
-app.post("/messageData", async (req, res) => {
-  try {
-    const { message_id, user_id, is_last = true, messageLimit } = req.body;
-    let data;
-    const collection = await db.collection("messages");
-    if (message_id) {
-      if (is_last) {
+app.post(
+  "/coach",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const collection = await db.collection("coachs");
+      const { name, mobile, password } = req.body;
+      if (!name || !mobile || !password)
+        return res
+          .status(201)
+          .json({ msg: "Data cannot be empty", status: 400 });
+      const coach = {
+        username: name,
+        mobileNum: mobile,
+        password: password,
+      };
+      await collection.insertOne(coach);
+      res.status(201).json({ msg: "Coaches Created", status: 201, password });
+    } catch (error) {
+      res.status(201).json({ msg: "Something Went Wrong", status: 400 });
+    }
+  }
+);
+
+app.post(
+  "/patient",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { name } = req.body;
+    } catch (error) {
+      res
+        .status(201)
+        .json({ msg: "Something Went Wrong Message", status: 400 });
+    }
+  }
+);
+
+app.post(
+  "/users",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      let { user_number } = req.body;
+      const collection = await db.collection("patients");
+      const messageCollection = await db.collection("messages");
+      let data;
+
+      if (user_number) {
         data = await collection.findOne(
-          { id: message_id },
+          { patient_phone_number: user_number },
+          { messages: 1 }
+        );
+
+        if (!data) {
+          return res.status(404).json({ msg: "User not found", status: 404 });
+        }
+
+        const lastMessageId = data.message_ids[data.message_ids.length - 1];
+        const lastMessage = await messageCollection.findOne(
+          { id: lastMessageId },
           { projection: { media_data: 0 } }
         );
+
+        data.lastMessage = lastMessage;
       } else {
-        data = await collection.findOne({ id: message_id });
+        data = await collection.find({}, { messages: 1 }).toArray();
+
+        for (let userData of data) {
+          const lastMessageId =
+            userData.message_ids?.[userData.message_ids.length - 1];
+          if (lastMessageId) {
+            const lastMessage = await messageCollection.findOne(
+              { id: lastMessageId },
+              { projection: { media_data: 0 } }
+            );
+            userData.lastMessage = lastMessage;
+          }
+        }
+
+        data = data.filter((userData) => userData.lastMessage); // Remove users without a last message
+        data.sort(
+          (i1, i2) => i2.lastMessage.timestamp - i1.lastMessage.timestamp
+        );
       }
-    } else {
-      data = await collection.aggregate([
-        { $match: { from: user_id } },
-        { $sort: { _id: -1 } },
-        { $skip: 20 * messageLimit },
-        { $limit: 20 },
-        { $project: { media_data: 0 } },
-        { $sort: { _id: 1 } },
-      ]);
 
-      data = await data.toArray();
+      res.json({ data: data });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ msg: "Internal Server Error", status: 500 });
     }
-    res.send({ data: data });
-  } catch (error) {
-    console.log(error.message);
-    res.status(400).json({ msg: "Something Went Wrong", status: 400 });
   }
-});
+);
 
-app.get("/mediaData", async (req, res) => {
-  try {
-    const collection = await db.collection("media");
-    let data = await collection.find({}, { media: 1 });
-    data = await data.toArray();
-    res.send({ data: data });
-  } catch (error) {
-    res.status(400).json({ msg: "Something went wrong", status: 400 });
+app.post(
+  "/messageData",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { message_id, user_id, is_last = true, messageLimit } = req.body;
+      let data;
+      const collection = await db.collection("messages");
+      if (message_id) {
+        if (is_last) {
+          data = await collection.findOne(
+            { id: message_id },
+            { projection: { media_data: 0 } }
+          );
+        } else {
+          data = await collection.findOne({ id: message_id });
+        }
+      } else {
+        data = await collection.aggregate([
+          { $match: { from: user_id } },
+          { $sort: { _id: -1 } },
+          { $skip: 20 * messageLimit },
+          { $limit: 20 },
+          { $project: { media_data: 0 } },
+          { $sort: { _id: 1 } },
+        ]);
+
+        data = await data.toArray();
+      }
+      res.send({ data: data });
+    } catch (error) {
+      console.log(error.message);
+      res.status(400).json({ msg: "Something Went Wrong", status: 400 });
+    }
   }
-});
+);
+
+app.get(
+  "/mediaData",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const collection = await db.collection("media");
+      let data = await collection.find({}, { media: 1 });
+      data = await data.toArray();
+      res.send({ data: data });
+    } catch (error) {
+      res.status(400).json({ msg: "Something went wrong", status: 400 });
+    }
+  }
+);
 
 setTimeout(() => {
   let a = {
@@ -834,42 +917,51 @@ const upload = multer({
   storage: storage,
 });
 
-app.use("/recieve-media", express.static("public"));
-app.post("/recieve-media", upload.single("file"), async (req, res) => {
-  let { to, type } = req.body;
-  let { token } = req;
-  let pData = {
-    messaging_product: "whatsapp",
-    to: to,
-    type: type || req.file?.mimetype?.split("/")[0] || "",
-    data: {
-      path: `uploads/${req.file.filename}`,
-    },
-  };
-  console.log(pData);
-  fetch(`${baseUrl}/message`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(pData),
-  })
-    .then((response) => {
-      if (response.status === 401) {
-        throw new Error(response?.error || "Data couldn't upload");
-      }
-      return response.json();
+app.use(
+  "/recieve-media",
+  (...args) => permissionCheck(...args, "chat_app"),
+  express.static("public")
+);
+app.post(
+  "/recieve-media",
+  (...args) => permissionCheck(...args, "chat_app"),
+  upload.single("file"),
+  async (req, res) => {
+    let { to, type } = req.body;
+    let { token } = req;
+    let pData = {
+      messaging_product: "whatsapp",
+      to: to,
+      type: type || req.file?.mimetype?.split("/")[0] || "",
+      data: {
+        path: `uploads/${req.file.filename}`,
+      },
+    };
+    console.log(pData);
+    fetch(`${baseUrl}/message`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(pData),
     })
-    .then((jsonData) => {
-      deleteAllFiles("./uploads");
-      res.send({ msg: "Added", data: jsonData });
-    })
-    .catch((error) => {
-      console.log(error.message, "Error");
-      res.send({ msg: error.message });
-    });
-});
+      .then((response) => {
+        if (response.status === 401) {
+          throw new Error(response?.error || "Data couldn't upload");
+        }
+        return response.json();
+      })
+      .then((jsonData) => {
+        deleteAllFiles("./uploads");
+        res.send({ msg: "Added", data: jsonData });
+      })
+      .catch((error) => {
+        console.log(error.message, "Error");
+        res.send({ msg: error.message });
+      });
+  }
+);
 
 let users = {};
 io.on("connection", (socket) => {
@@ -929,71 +1021,85 @@ function fetchData(num) {
 
 // fetchData(917895441429);
 
-app.post("/get-user-note", async (req, res) => {
-  try {
-    const { note, patient_phone_number } = req.body;
-    const collection = db.collection("patients");
-    const result = await collection.updateOne(
-      { patient_phone_number },
-      { $set: { note } }
-    );
+app.post(
+  "/get-user-note",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { note, patient_phone_number } = req.body;
+      const collection = db.collection("patients");
+      const result = await collection.updateOne(
+        { patient_phone_number },
+        { $set: { note } }
+      );
 
-    res.status(200).json({ message: "Note updated successfully" });
-  } catch (error) {
-    console.error("Error updating note:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.post("/get-coach-details", async (req, res) => {
-  try {
-    const { email, username } = req;
-    const collection = await db.collection("coaches");
-    // let coach = await collection.findOne(
-    //   { email },
-    //   {
-    //     $project: {
-    //       _id: 0, // Exclude _id field
-    //       username: 1,
-    //     },
-    //   }
-    // );
-    // console.log(username)
-
-    if (username) {
-      res.json({ data: { coachName: username } });
-    } else {
-      res.status(404).json({ message: "Coach not found" });
+      res.status(200).json({ message: "Note updated successfully" });
+    } catch (error) {
+      console.error("Error updating note:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-  } catch (error) {
-    console.error("Error getting coach details:", error);
-    res.status(500).json({ message: "Internal server error" });
   }
-});
+);
 
-app.post("/update-patient", async (req, res) => {
-  try {
-    const { from, name, coach, stage, center, area } = req.body;
-    const collection = await db.collection("patients");
-    console.log(from, name, coach, stage, center, area);
-    await collection.updateOne(
-      {
-        patient_phone_number: from,
-      },
-      {
-        $set: {
-          name,
-          stage,
-          center,
-          area,
-          coach,
-        },
+app.post(
+  "/get-coach-details",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { email, username } = req;
+      const collection = await db.collection("coaches");
+      // let coach = await collection.findOne(
+      //   { email },
+      //   {
+      //     $project: {
+      //       _id: 0, // Exclude _id field
+      //       username: 1,
+      //     },
+      //   }
+      // );
+      // console.log(username)
+
+      if (username) {
+        res.json({ data: { coachName: username } });
+      } else {
+        res.status(404).json({ message: "Coach not found" });
       }
-    );
-    console.log("updated");
-    res.status(200).json({ msg: "Updated Successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error " + error.message });
+    } catch (error) {
+      console.error("Error getting coach details:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
+
+app.post(
+  "/update-patient",
+  (...args) => permissionCheck(...args, "chat_app"),
+  async (req, res) => {
+    try {
+      const { from, name, coach, stage, center, area } = req.body;
+      const collection = await db.collection("patients");
+      console.log(from, name, coach, stage, center, area);
+      await collection.updateOne(
+        {
+          patient_phone_number: from,
+        },
+        {
+          $set: {
+            name,
+            stage,
+            center,
+            area,
+            coach,
+          },
+        }
+      );
+      console.log("updated");
+      res.status(200).json({ msg: "Updated Successfully" });
+    } catch (error) {
+      console.log(error);
+      res
+        .status(500)
+        .json({ message: "Internal server error " + error.message });
+    }
+  }
+);
