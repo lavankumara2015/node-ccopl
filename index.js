@@ -136,18 +136,18 @@ const userAuthentication = (req, res, next) => {
   }
 };
 
-const ourApps = ["carrier_page", "chat_app", "crm_page"];
+const ourApps = ["carrier_page", "chat_app", "crm_page", "is_admin"];
 
 // use to check permission of user
 const permissionCheck = async (req, res, next, page = "carrier_page") => {
   try {
     let { email } = req;
-    console.log(email)
+    console.log(email);
     if (!email) {
       email = req.body.email;
-      console.log(email)
+      console.log(email);
     }
-    
+
     const permissionCollection = await db.collection("permission");
     const permission = await permissionCollection.findOne({ email });
     if (permission) {
@@ -155,11 +155,11 @@ const permissionCheck = async (req, res, next, page = "carrier_page") => {
         console.log(`You have permission for ${page}`);
         return next();
       } else {
-        console.log("You don't have permission 1");
+        console.log(`You don't have permission for ${page}`);
         res.status(401).json({ msg: "Unauthorized" });
       }
     } else {
-      console.log("You don't have permission 2");
+      console.log(`You don't have permission for ${page}`);
       res
         .status(401)
         .json({ msg: "You don't have permission to access this resource" });
@@ -206,7 +206,6 @@ app.post("/coach/register", async (req, res) => {
 
 app.post(
   "/coach/login",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const { password, email } = req.body;
@@ -242,7 +241,6 @@ app.post(
 app.post(
   "/verify",
   userAuthentication,
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     res.status(201).json({ msg: "Verified" });
   }
@@ -611,7 +609,6 @@ async function getMessageObject(data, to, type = "text") {
 
 app.post(
   "/message",
-  (...args) => permissionCheck(...args, "chat_app"),
   async function (request, response) {
     try {
       const { type, data, to } = await request.body;
@@ -747,7 +744,6 @@ app.post(
 
 app.post(
   "/coach",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const collection = await db.collection("coachs");
@@ -771,7 +767,6 @@ app.post(
 
 app.post(
   "/patient",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const { name } = req.body;
@@ -785,7 +780,6 @@ app.post(
 
 app.post(
   "/users",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       let { user_number } = req.body;
@@ -841,7 +835,6 @@ app.post(
 
 app.post(
   "/messageData",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const { message_id, user_id, is_last = true, messageLimit } = req.body;
@@ -878,7 +871,7 @@ app.post(
 
 app.get(
   "/mediaData",
-  (...args) => permissionCheck(...args, "chat_app"),
+
   async (req, res) => {
     try {
       const collection = await db.collection("media");
@@ -919,12 +912,11 @@ const upload = multer({
 
 app.use(
   "/recieve-media",
-  (...args) => permissionCheck(...args, "chat_app"),
   express.static("public")
 );
 app.post(
   "/recieve-media",
-  (...args) => permissionCheck(...args, "chat_app"),
+
   upload.single("file"),
   async (req, res) => {
     let { to, type } = req.body;
@@ -1023,7 +1015,6 @@ function fetchData(num) {
 
 app.post(
   "/get-user-note",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const { note, patient_phone_number } = req.body;
@@ -1043,7 +1034,6 @@ app.post(
 
 app.post(
   "/get-coach-details",
-  (...args) => permissionCheck(...args, "chat_app"),
   async (req, res) => {
     try {
       const { email, username } = req;
@@ -1071,35 +1061,29 @@ app.post(
   }
 );
 
-app.post(
-  "/update-patient",
-  (...args) => permissionCheck(...args, "chat_app"),
-  async (req, res) => {
-    try {
-      const { from, name, coach, stage, center, area } = req.body;
-      const collection = await db.collection("patients");
-      console.log(from, name, coach, stage, center, area);
-      await collection.updateOne(
-        {
-          patient_phone_number: from,
+app.post("/update-patient", async (req, res) => {
+  try {
+    const { from, name, coach, stage, center, area } = req.body;
+    const collection = await db.collection("patients");
+    console.log(from, name, coach, stage, center, area);
+    await collection.updateOne(
+      {
+        patient_phone_number: from,
+      },
+      {
+        $set: {
+          name,
+          stage,
+          center,
+          area,
+          coach,
         },
-        {
-          $set: {
-            name,
-            stage,
-            center,
-            area,
-            coach,
-          },
-        }
-      );
-      console.log("updated");
-      res.status(200).json({ msg: "Updated Successfully" });
-    } catch (error) {
-      console.log(error);
-      res
-        .status(500)
-        .json({ message: "Internal server error " + error.message });
-    }
+      }
+    );
+    console.log("updated");
+    res.status(200).json({ msg: "Updated Successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error " + error.message });
   }
-);
+});
