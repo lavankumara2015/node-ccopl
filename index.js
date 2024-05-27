@@ -235,13 +235,30 @@ app.post("/coach/login", async (req, res) => {
   }
 });
 
-app.use("/app", express.static(path.join(__dirname, "./build")));
+console.log(path.join(__dirname));
 
-// Your API routes go here...
+app.use(express.static(path.join(__dirname, "build")));
 
-// All other GET requests not handled before will return the React app
+// app.get("/dashboard", (req, res) => {
+//   res.send("Mess");
+// });
+
+app.get("/", (req, res) => {
+  console.log(path.join(__dirname, "first"));
+  res.sendFile(path.join(__dirname, "./build/index.html"));
+});
+
+app.get("/app", (req, res) => {
+  console.log(path.join(__dirname, "first"));
+  res.sendFile(path.join(__dirname, "./build/index.html"));
+});
+
 app.get("/app/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "./build", "index.html"));
+
+  let param = req.params.param
+  console.log(req.param[0])
+  // console.log(path.join(__dirname, "second",param));
+  res.sendFile(path.join(__dirname, "./build/",req.params[0]));
 });
 
 app.post("/verify", userAuthentication, async (req, res) => {
